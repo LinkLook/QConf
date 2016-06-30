@@ -1,0 +1,56 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+CONFIG_H	Config.h	2;"	d
+CONSTDEF_H	ConstDef.h	2;"	d
+Config	Config.cpp	/^Config::Config(){$/;"	f	class:Config
+Config	Config.h	/^class Config {$/;"	c
+LOG_DEBUG	Log.h	14;"	d
+LOG_ERROR	Log.h	9;"	d
+LOG_FATAL_ERROR	Log.h	8;"	d
+LOG_H	Log.h	2;"	d
+LOG_INFO	Log.h	12;"	d
+LOG_NOTICE	Log.h	11;"	d
+LOG_TRACE	Log.h	13;"	d
+LOG_WARNING	Log.h	10;"	d
+Log	Log.h	/^class Log{$/;"	c
+UTIL_H	Util.h	2;"	d
+Util	Util.h	/^class Util{$/;"	c
+_autoStart	Config.h	/^	int _autoStart;$/;"	m	class:Config
+_connRetryCount	Config.h	/^	int _connRetryCount;$/;"	m	class:Config
+_daemonMode	Config.h	/^	int _daemonMode;$/;"	m	class:Config
+_instance	Config.h	/^	static Config* _instance;$/;"	m	class:Config
+_instanceName	Config.h	/^	std::string _instanceName;$/;"	m	class:Config
+_logLevel	Config.h	/^	int _logLevel;$/;"	m	class:Config
+_monitorHostname	Config.h	/^	string _monitorHostname;$/;"	m	class:Config
+_scanInterval	Config.h	/^	int _scanInterval;$/;"	m	class:Config
+_zkHost	Config.h	/^	std::string _zkHost;$/;"	m	class:Config
+_zkLogPath	Config.h	/^	std::string _zkLogPath;	$/;"	m	class:Config
+autoStart	ConstDef.h	/^const string autoStart = "auto_start";$/;"	v
+confPath	ConstDef.h	/^const string confPath = "conf\/monitor.conf"; $/;"	v
+connRetryCount	ConstDef.h	/^const string connRetryCount = "connect_retry_count";$/;"	v
+curLogFileName	Log.h	/^	static char curLogFileName[128];$/;"	m	class:Log
+daemonMode	ConstDef.h	/^const string daemonMode = "daemon_mode";$/;"	v
+getInstance	Config.cpp	/^Config* Config::getInstance(){$/;"	f	class:Config
+instanceName	ConstDef.h	/^const string instanceName = "instance_name";$/;"	v
+load	Config.cpp	/^int Config::load(){$/;"	f	class:Config
+logFile	Log.h	/^	static FILE* logFile;$/;"	m	class:Log
+logLevel	ConstDef.h	/^const string logLevel = "log_level";$/;"	v
+logLevel	Log.h	/^	static int logLevel;$/;"	m	class:Log
+logPath	ConstDef.h	/^const string logPath = "zk_log";$/;"	v
+main	Agent.cpp	/^int main(int argc, char** argv){$/;"	f
+maxLogLevel	ConstDef.h	/^constexpr int maxLogLevel = 6;$/;"	v
+minLogLevel	ConstDef.h	/^constexpr int minLogLevel = 0;$/;"	v
+mutex	Log.h	/^	static pthread_mutex_t mutex;$/;"	m	class:Log
+printConfig	Util.cpp	/^int Util::printConfig(){$/;"	f	class:Util
+resetConfig	Config.cpp	/^int Config::resetConfig(){$/;"	f	class:Config
+scanInterval	ConstDef.h	/^const string scanInterval = "scan_interval";$/;"	v
+setValueInt	Config.cpp	/^int Config::setValueInt(const string& key, const string& value){$/;"	f	class:Config
+setValueStr	Config.cpp	/^int Config::setValueStr(const string& key, const string& value){$/;"	f	class:Config
+split	Util.cpp	/^vector<string> Util::split(const string& str, const char separator){$/;"	f	class:Util
+trim	Util.cpp	/^int Util::trim(string& str) {$/;"	f	class:Util
+zkHost	ConstDef.h	/^const string zkHost = "zookeeper.";$/;"	v
+~Config	Config.cpp	/^Config::~Config(){$/;"	f	class:Config
