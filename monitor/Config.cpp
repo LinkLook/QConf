@@ -1,25 +1,34 @@
 #include <fstream>
 #include "ConstDef.h"
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <map>
+#include <set>
 #include <vector>
 #include <iostream>
 #include "Config.h"
 #include <unistd.h>
 #include "Util.h"
+#include "Log.h"
 using namespace std;
+
+Config* Config::_instance = NULL;
 
 Config::Config(){
 	resetConfig();
 }
 
 Config::~Config(){
-
+	delete _instance;
 }
 
 Config* Config::getInstance(){
 	if (_instance == NULL){
 		_instance = new Config();
-		_instance->load();	
+		_instance->load();
+		//reload the config result in the change of loglevel in Log
+		Log::init(_instance->getLogLevel());	
 	}
 	return _instance;
 }
@@ -33,7 +42,8 @@ int Config::resetConfig(){
     _monitorHostname = ""; 
     _connRetryCount = 3;
     _scanInterval = 3;
-//    _serviceMap.clear();
+    _serviceMap.clear();
+    _zkRecvTimeout = 3000;
 	return 0;
 }
 
@@ -71,14 +81,14 @@ int Config::setValueStr(const string& key, const string& value){
 	if (key == instanceName){
 		_instanceName = value;
 	}
-	else if (key == logPath){
+	else if (key == zkLogPath){
 		_zkLogPath = value;
 	}
+	//find the zk host this monitor should focus on. Their idc should be the same
 	else if (key.substr(0, zkHost.length()) == zkHost){
 		char hostname[512] = {0};
 		if (gethostname(hostname, sizeof(hostname)) != 0) {
-			//how to log
-			//LOG("get host name failed");
+			LOG(LOG_ERROR, "get host name failed");
 			return -1;
 		}
 		string idc = key.substr(zkHost.length());
@@ -91,10 +101,13 @@ int Config::setValueStr(const string& key, const string& value){
 				break;
 			}
 		}
+        //no need to log this or there will be a lot error because config file has other idc
+        /*
 		if (i == singleWord.size()){
-			//LOG("idc not found");
+			LOG(LOG_ERROR, "idc not found");
 			return -1;
 		}
+        */
 	}
 	return 0;
 }
@@ -125,15 +138,110 @@ int Config::load(){
 			//get the value
 			string value = line.substr(pos + 1);
 			Util::trim(value);
-//			cout << key << " " << value << endl;
 			setValueInt(key, value);
 			setValueStr(key, value);
 		}
 	} 
 	else {
-		//todo
-		cout << "config file open wrong" << endl;
+		LOG(LOG_ERROR, "config file open wrong");
 	}
 	file.close();
 	return 0;
+}
+
+int Config::getLogLevel(){
+	return _logLevel;
+}
+
+int Config::isDaemonMode(){
+	return _daemonMode;
+}
+
+string Config::getMonitorHostname(){
+	return _monitorHostname;
+}
+
+int Config::isAutoStart(){
+	return _autoStart;
+}
+
+int Config::getConnRetryCount(){
+	return _connRetryCount;
+}
+
+int Config::getScanInterval(){
+	return _scanInterval;
+}
+
+string Config::getInstanceName(){
+	return _instanceName;
+}
+
+string Config::getZkHost(){
+	return _zkHost;
+}
+
+string Config::getZkLogPath(){
+	return _zkLogPath;
+}
+
+void Config::clearServiceMap() {
+	_serviceMap.clear();
+}
+
+int Config::getZkRecvTimeout() {
+	return _zkRecvTimeout;
+}
+
+string Config::getNodeList() {
+	//todo should do something to judge weather instanceName is null
+	return LOCK_ROOT_DIR + SLASH + _instanceName + SLASH + NODE_LIST;
+}
+
+string Config::getMonitorList() {
+	//todo
+	return LOCK_ROOT_DIR + SLASH + _instanceName + SLASH + MONITOR_LIST;
+}
+
+int Config::printMap() {
+	for (auto it = _serviceMap.begin(); it != _serviceMap.end(); ++it) {
+#ifdef DEBUGSSS
+		if ((it->second).getServiceFather() != "/qconf/demo/test/hosts") {
+			continue;
+		}
+#endif
+		cout << it->first << endl;
+		cout << "host: " << (it->second).getHost() << endl;
+		cout << "port: " << (it->second).getPort() << endl;
+		cout << "service father: " << (it->second).getServiceFather() << endl;
+		cout << "status: " << (it->second).getStatus() << endl;
+	}
+    return 0;
+}
+
+
+int Config::addService(string ipPath, ServiceItem serviceItem) {
+	//这里还需要加锁
+
+    _serviceMap[ipPath] = serviceItem;
+    return 0;
+}
+
+void Config::deleteService(const string& ipPath) {
+	_serviceMap.erase(ipPath);
+}
+
+map<string, ServiceItem>& Config::getServiceMap() {
+	return _serviceMap;
+}
+
+int Config::setServiceMap(string node, int val) {
+	//todo 同样缺异常判断，比如找不到怎么办啊什么的，还有这里锁怎么加？
+	ServiceItem item = _serviceMap[node];
+	item.setStatus(val);
+	return 0;
+}
+
+ServiceItem& Config::getServiceItem(const string& ipPath) {
+    return _serviceMap[ipPath];
 }

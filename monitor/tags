@@ -4,53 +4,414 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.8	//
+ASSOCIATING_STATE_DEF	zk_adaptor.h	38;"	d
+AUTH_FAILED_STATE_DEF	zk_adaptor.h	36;"	d
+AUTH_XID	zk_adaptor.h	31;"	d
+CC	Makefile	/^CC 		= g++ -std=c++11 -D DEBUG$/;"	m
+CCFLAGS	Makefile	/^CCFLAGS = -c -Wall -I \/usr\/local\/include\/zookeeper $/;"	m
+CHANGED_EVENT_DEF	zk_adaptor.h	44;"	d
+CHILD_EVENT_DEF	zk_adaptor.h	45;"	d
+CMDFILE	ConstDef.h	/^const string CMDFILE = "tmp\/cmd";$/;"	v
 CONFIG_H	Config.h	2;"	d
+CONNECTED_STATE_DEF	zk_adaptor.h	39;"	d
+CONNECTING_STATE_DEF	zk_adaptor.h	37;"	d
 CONSTDEF_H	ConstDef.h	2;"	d
+CREATED_EVENT_DEF	zk_adaptor.h	42;"	d
 Config	Config.cpp	/^Config::Config(){$/;"	f	class:Config
 Config	Config.h	/^class Config {$/;"	c
-LOG_DEBUG	Log.h	14;"	d
-LOG_ERROR	Log.h	9;"	d
-LOG_FATAL_ERROR	Log.h	8;"	d
+DEFAULT_INSTANCE_NAME	ConstDef.h	/^const string DEFAULT_INSTANCE_NAME = "default_instance";$/;"	v
+DELETED_EVENT_DEF	zk_adaptor.h	43;"	d
+EXPIRED_SESSION_STATE_DEF	zk_adaptor.h	35;"	d
+HANDSHAKE_REQ_SIZE	zk_adaptor.h	128;"	d
+LOADBALANCE_H	LoadBalance.h	2;"	d
+LOCK_ROOT_DIR	ConstDef.h	/^const string LOCK_ROOT_DIR = "\/qconf_monitor_lock_node";$/;"	v
+LOG	Log.h	19;"	d
+LOG_DEBUG	Log.h	17;"	d
+LOG_ERROR	Log.h	12;"	d
+LOG_FATAL_ERROR	Log.h	11;"	d
 LOG_H	Log.h	2;"	d
-LOG_INFO	Log.h	12;"	d
-LOG_NOTICE	Log.h	11;"	d
-LOG_TRACE	Log.h	13;"	d
-LOG_WARNING	Log.h	10;"	d
+LOG_INFO	Log.h	15;"	d
+LOG_NOTICE	Log.h	14;"	d
+LOG_TRACE	Log.h	16;"	d
+LOG_WARNING	Log.h	13;"	d
+LoadBalance	LoadBalance.cpp	/^LoadBalance::LoadBalance() : zh(NULL){$/;"	f	class:LoadBalance
+LoadBalance	LoadBalance.h	/^class LoadBalance {$/;"	c
 Log	Log.h	/^class Log{$/;"	c
+MAX_THREAD_NUM	ConstDef.h	/^constexpr int MAX_THREAD_NUM = 128;$/;"	v
+MAX_THREAD_NUM	ConstDef.h	/^constexpr int MAX_THREAD_NUM = 5;$/;"	v
+MONITOR_LIST	ConstDef.h	/^const string MONITOR_LIST = "monitor_list";$/;"	v
+MONITOR_PROCESS_NAME	ConstDef.h	/^const string MONITOR_PROCESS_NAME = "qconf-monitor";$/;"	v
+MULTITHREAD_H	MultiThread.h	2;"	d
+M_ERR	ConstDef.h	/^constexpr int M_ERR = -1;$/;"	v
+M_OK	ConstDef.h	/^constexpr int M_OK = 0;$/;"	v
+NODE_LIST	ConstDef.h	/^const string NODE_LIST = "md5_list";$/;"	v
+NOSCHEDULE	ConstDef.h	/^constexpr int NOSCHEDULE = 0;$/;"	v
+NOTWATCHING_EVENT_DEF	zk_adaptor.h	47;"	d
+OBJS	Makefile	/^OBJS = Config.o Agent.o Util.o \\$/;"	m
+PIDFILE	ConstDef.h	/^const string PIDFILE = "pid";$/;"	v
+PING_XID	zk_adaptor.h	30;"	d
+PROCESS_H	Process.h	2;"	d
+PROCESS_SESSION_EVENT	zk_adaptor.h	250;"	d
+PROCESS_SESSION_EVENT	zk_adaptor.h	254;"	d
+Process	Process.h	/^class Process{$/;"	c
+SCHEDULE	ConstDef.h	/^constexpr int SCHEDULE = 1;$/;"	v
+SERVICELISTENER_H	ServiceListener.h	2;"	d
+SERVICEMAP_H	ServiceItem.h	2;"	d
+SESSION_EVENT_DEF	zk_adaptor.h	46;"	d
+SET_WATCHES_XID	zk_adaptor.h	32;"	d
+SLASH	ConstDef.h	/^const string SLASH = "\/";$/;"	v
+SPINLOCK_INITIALIZER	x86_spinlocks.h	11;"	d
+STATUS_DOWN	ConstDef.h	42;"	d
+STATUS_OFFLINE	ConstDef.h	41;"	d
+STATUS_UNKNOWN	ConstDef.h	39;"	d
+STATUS_UP	ConstDef.h	40;"	d
+ServiceItem	ServiceItem.cpp	/^ServiceItem::ServiceItem():$/;"	f	class:ServiceItem
+ServiceItem	ServiceItem.cpp	/^ServiceItem::ServiceItem(std::string host, struct in_addr *addr, int port, int connRetry, int timeout, std::string serviceFather, int status):$/;"	f	class:ServiceItem
+ServiceItem	ServiceItem.h	/^class ServiceItem{$/;"	c
+ServiceListener	ServiceListener.cpp	/^ServiceListener::ServiceListener() : zh(NULL) {$/;"	f	class:ServiceListener
+ServiceListener	ServiceListener.h	/^class ServiceListener {$/;"	c
 UTIL_H	Util.h	2;"	d
 Util	Util.h	/^class Util{$/;"	c
+WATCHER_EVENT_XID	zk_adaptor.h	29;"	d
+ZAPIERROR	zookeeper.h	/^  ZAPIERROR = -100,$/;"	e	enum:ZOO_ERRORS
+ZAUTHFAILED	zookeeper.h	/^  ZAUTHFAILED = -115, \/*!< Client authentication failed *\/$/;"	e	enum:ZOO_ERRORS
+ZBADARGUMENTS	zookeeper.h	/^  ZBADARGUMENTS = -8, \/*!< Invalid arguments *\/$/;"	e	enum:ZOO_ERRORS
+ZBADVERSION	zookeeper.h	/^  ZBADVERSION = -103, \/*!< Version conflict *\/$/;"	e	enum:ZOO_ERRORS
+ZCLOSING	zookeeper.h	/^  ZCLOSING = -116, \/*!< ZooKeeper is closing *\/$/;"	e	enum:ZOO_ERRORS
+ZCONNECTIONLOSS	zookeeper.h	/^  ZCONNECTIONLOSS = -4, \/*!< Connection to the server has been lost *\/$/;"	e	enum:ZOO_ERRORS
+ZDATAINCONSISTENCY	zookeeper.h	/^  ZDATAINCONSISTENCY = -3, \/*!< A data inconsistency was found *\/$/;"	e	enum:ZOO_ERRORS
+ZINVALIDACL	zookeeper.h	/^  ZINVALIDACL = -114, \/*!< Invalid ACL specified *\/$/;"	e	enum:ZOO_ERRORS
+ZINVALIDCALLBACK	zookeeper.h	/^  ZINVALIDCALLBACK = -113, \/*!< Invalid callback specified *\/$/;"	e	enum:ZOO_ERRORS
+ZINVALIDSTATE	zookeeper.h	/^  ZINVALIDSTATE = -9, \/*!< Invliad zhandle state *\/$/;"	e	enum:ZOO_ERRORS
+ZK_ADAPTOR_H_	zk_adaptor.h	20;"	d
+ZK_H	Zk.h	2;"	d
+ZK_SPINLOCK_H_	x86_spinlocks.h	2;"	d
+ZMARSHALLINGERROR	zookeeper.h	/^  ZMARSHALLINGERROR = -5, \/*!< Error while marshalling or unmarshalling data *\/$/;"	e	enum:ZOO_ERRORS
+ZNOAUTH	zookeeper.h	/^  ZNOAUTH = -102, \/*!< Not authenticated *\/$/;"	e	enum:ZOO_ERRORS
+ZNOCHILDRENFOREPHEMERALS	zookeeper.h	/^  ZNOCHILDRENFOREPHEMERALS = -108, \/*!< Ephemeral nodes may not have children *\/$/;"	e	enum:ZOO_ERRORS
+ZNODEEXISTS	zookeeper.h	/^  ZNODEEXISTS = -110, \/*!< The node already exists *\/$/;"	e	enum:ZOO_ERRORS
+ZNONODE	zookeeper.h	/^  ZNONODE = -101, \/*!< Node does not exist *\/$/;"	e	enum:ZOO_ERRORS
+ZNOTEMPTY	zookeeper.h	/^  ZNOTEMPTY = -111, \/*!< The node has children *\/$/;"	e	enum:ZOO_ERRORS
+ZNOTHING	zookeeper.h	/^  ZNOTHING = -117, \/*!< (not error) no server responses to process *\/$/;"	e	enum:ZOO_ERRORS
+ZOK	zookeeper.h	/^  ZOK = 0, \/*!< Everything is OK *\/$/;"	e	enum:ZOO_ERRORS
+ZOOAPI	zookeeper.h	65;"	d
+ZOOAPI	zookeeper.h	68;"	d
+ZOOAPI	zookeeper.h	70;"	d
+ZOOKEEPER_H_	zookeeper.h	20;"	d
+ZOO_ERRORS	zookeeper.h	/^enum ZOO_ERRORS {$/;"	g
+ZOO_LIB	Makefile	/^ZOO_LIB = \/usr\/local\/lib\/libzookeeper_mt.a$/;"	m
+ZOO_LOG_LEVEL_DEBUG	zookeeper.h	/^typedef enum {ZOO_LOG_LEVEL_ERROR=1,ZOO_LOG_LEVEL_WARN=2,ZOO_LOG_LEVEL_INFO=3,ZOO_LOG_LEVEL_DEBUG=4} ZooLogLevel;$/;"	e	enum:__anon7
+ZOO_LOG_LEVEL_ERROR	zookeeper.h	/^typedef enum {ZOO_LOG_LEVEL_ERROR=1,ZOO_LOG_LEVEL_WARN=2,ZOO_LOG_LEVEL_INFO=3,ZOO_LOG_LEVEL_DEBUG=4} ZooLogLevel;$/;"	e	enum:__anon7
+ZOO_LOG_LEVEL_INFO	zookeeper.h	/^typedef enum {ZOO_LOG_LEVEL_ERROR=1,ZOO_LOG_LEVEL_WARN=2,ZOO_LOG_LEVEL_INFO=3,ZOO_LOG_LEVEL_DEBUG=4} ZooLogLevel;$/;"	e	enum:__anon7
+ZOO_LOG_LEVEL_WARN	zookeeper.h	/^typedef enum {ZOO_LOG_LEVEL_ERROR=1,ZOO_LOG_LEVEL_WARN=2,ZOO_LOG_LEVEL_INFO=3,ZOO_LOG_LEVEL_DEBUG=4} ZooLogLevel;$/;"	e	enum:__anon7
+ZOPERATIONTIMEOUT	zookeeper.h	/^  ZOPERATIONTIMEOUT = -7, \/*!< Operation timeout *\/$/;"	e	enum:ZOO_ERRORS
+ZRUNTIMEINCONSISTENCY	zookeeper.h	/^  ZRUNTIMEINCONSISTENCY = -2, \/*!< A runtime inconsistency was found *\/$/;"	e	enum:ZOO_ERRORS
+ZSESSIONEXPIRED	zookeeper.h	/^  ZSESSIONEXPIRED = -112, \/*!< The session has been expired by the server *\/$/;"	e	enum:ZOO_ERRORS
+ZSESSIONMOVED	zookeeper.h	/^  ZSESSIONMOVED = -118 \/*!<session moved to another server, so operation is ignored *\/ $/;"	e	enum:ZOO_ERRORS
+ZSYSTEMERROR	zookeeper.h	/^  ZSYSTEMERROR = -1,$/;"	e	enum:ZOO_ERRORS
+ZUNIMPLEMENTED	zookeeper.h	/^  ZUNIMPLEMENTED = -6, \/*!< Operation is unimplemented *\/$/;"	e	enum:ZOO_ERRORS
+Zk	Zk.cpp	/^Zk::Zk():_zh(NULL), _recvTimeout(3000), _zkLogPath(""), _zkHost(""), _zkLogFile(NULL) {$/;"	f	class:Zk
+Zk	Zk.h	/^class Zk{$/;"	c
+ZooLogLevel	zookeeper.h	/^typedef enum {ZOO_LOG_LEVEL_ERROR=1,ZOO_LOG_LEVEL_WARN=2,ZOO_LOG_LEVEL_INFO=3,ZOO_LOG_LEVEL_DEBUG=4} ZooLogLevel;$/;"	t	typeref:enum:__anon7
+_addr	ServiceItem.h	/^    struct in_addr _addr;$/;"	m	class:ServiceItem	typeref:struct:ServiceItem::in_addr
+_auth_info	zk_adaptor.h	/^typedef struct _auth_info {$/;"	s
+_auth_list_head	zk_adaptor.h	/^typedef struct _auth_list_head {$/;"	s
 _autoStart	Config.h	/^	int _autoStart;$/;"	m	class:Config
+_buffer_head	zk_adaptor.h	/^typedef struct _buffer_head {$/;"	s
+_buffer_list	zk_adaptor.h	/^typedef struct _buffer_list {$/;"	s
+_completion_head	zk_adaptor.h	/^typedef struct _completion_head {$/;"	s
+_connRetry	ServiceItem.h	/^    int _connRetry;$/;"	m	class:ServiceItem
 _connRetryCount	Config.h	/^	int _connRetryCount;$/;"	m	class:Config
+_connTimeout	ServiceItem.h	/^    int _connTimeout;$/;"	m	class:ServiceItem
 _daemonMode	Config.h	/^	int _daemonMode;$/;"	m	class:Config
+_host	ServiceItem.h	/^    std::string _host;$/;"	m	class:ServiceItem
 _instance	Config.h	/^	static Config* _instance;$/;"	m	class:Config
 _instanceName	Config.h	/^	std::string _instanceName;$/;"	m	class:Config
 _logLevel	Config.h	/^	int _logLevel;$/;"	m	class:Config
 _monitorHostname	Config.h	/^	string _monitorHostname;$/;"	m	class:Config
+_port	ServiceItem.h	/^    int _port;$/;"	m	class:ServiceItem
+_recvTimeout	Zk.h	/^	int _recvTimeout;$/;"	m	class:Zk
 _scanInterval	Config.h	/^	int _scanInterval;$/;"	m	class:Config
+_serviceFather	ServiceItem.h	/^    std::string _serviceFather;$/;"	m	class:ServiceItem
+_serviceMap	Config.h	/^	map<string, ServiceItem> _serviceMap;$/;"	m	class:Config
+_spinlock_unlock	x86_spinlocks.h	13;"	d
+_status	ServiceItem.h	/^    int _status;$/;"	m	class:ServiceItem
+_stop	Agent.cpp	/^static bool _stop = false;$/;"	v	file:
+_stop	Process.cpp	/^static bool _stop = false;$/;"	v	file:
+_zh	Zk.h	/^	zhandle_t* _zh;$/;"	m	class:Zk
+_zhandle	zk_adaptor.h	/^struct _zhandle {$/;"	s
+_zk	Agent.cpp	/^static Zk* _zk = NULL;$/;"	v	file:
 _zkHost	Config.h	/^	std::string _zkHost;$/;"	m	class:Config
-_zkLogPath	Config.h	/^	std::string _zkLogPath;	$/;"	m	class:Config
+_zkHost	Zk.h	/^	string _zkHost;$/;"	m	class:Zk
+_zkLockBuf	Zk.cpp	/^char _zkLockBuf[512] = {0};$/;"	v
+_zkLogFile	Zk.h	/^	FILE* _zkLogFile;$/;"	m	class:Zk
+_zkLogPath	Config.h	/^	std::string _zkLogPath;$/;"	m	class:Config
+_zkLogPath	Zk.h	/^	string _zkLogPath;$/;"	m	class:Zk
+_zkRecvTimeout	Config.h	/^	int _zkRecvTimeout;$/;"	m	class:Config
+acl	zk_adaptor.h	/^            struct ACL_vector acl;$/;"	m	struct:sync_completion::__anon2::__anon5	typeref:struct:sync_completion::__anon2::__anon5::ACL_vector
+acl	zk_adaptor.h	/^        } acl;$/;"	m	union:sync_completion::__anon2	typeref:struct:sync_completion::__anon2::__anon5
+acl_completion_t	zookeeper.h	/^typedef void (*acl_completion_t)(int rc, struct ACL_vector *acl,$/;"	t
+active_child_watchers	zk_adaptor.h	/^    zk_hashtable* active_child_watchers;$/;"	m	struct:_zhandle
+active_exist_watchers	zk_adaptor.h	/^    zk_hashtable* active_exist_watchers;$/;"	m	struct:_zhandle
+active_node_watchers	zk_adaptor.h	/^    zk_hashtable* active_node_watchers;   $/;"	m	struct:_zhandle
+adaptor_priv	zk_adaptor.h	/^    void *adaptor_priv;$/;"	m	struct:_zhandle
+adaptor_threads	zk_adaptor.h	/^struct adaptor_threads {$/;"	s
+addChildren	ServiceListener.cpp	/^int ServiceListener::addChildren(const string serviceFather, struct String_vector children) {$/;"	f	class:ServiceListener
+addService	Config.cpp	/^int Config::addService(string ipPath, ServiceItem serviceItem) {$/;"	f	class:Config
+addrs	zk_adaptor.h	/^    struct sockaddr_storage *addrs; \/* the addresses that correspond to the hostname *\/$/;"	m	struct:_zhandle	typeref:struct:_zhandle::sockaddr_storage
+addrs_count	zk_adaptor.h	/^    int addrs_count; \/* The number of addresses in the addrs array *\/$/;"	m	struct:_zhandle
+auth	zk_adaptor.h	/^     auth_info *auth;$/;"	m	struct:_auth_list_head
+auth	zk_adaptor.h	/^    struct buffer auth;$/;"	m	struct:_auth_info	typeref:struct:_auth_info::buffer
+auth_h	zk_adaptor.h	/^    auth_list_head_t auth_h; \/* authentication data list *\/$/;"	m	struct:_zhandle
+auth_info	zk_adaptor.h	/^} auth_info;$/;"	t	typeref:struct:_auth_info
+auth_list_head_t	zk_adaptor.h	/^} auth_list_head_t;$/;"	t	typeref:struct:_auth_list_head
 autoStart	ConstDef.h	/^const string autoStart = "auto_start";$/;"	v
+balance	LoadBalance.cpp	/^int LoadBalance::balance() {$/;"	f	class:LoadBalance
+buff_len	zk_adaptor.h	/^            int buff_len;$/;"	m	struct:sync_completion::__anon2::__anon4
+buffer	zk_adaptor.h	/^            char *buffer;$/;"	m	struct:sync_completion::__anon2::__anon4
+buffer	zk_adaptor.h	/^    char *buffer;$/;"	m	struct:_buffer_list
+buffer_head_t	zk_adaptor.h	/^} buffer_head_t;$/;"	t	typeref:struct:_buffer_head
+buffer_list_t	zk_adaptor.h	/^} buffer_list_t;$/;"	t	typeref:struct:_buffer_list
+checkAndCreateZnode	Zk.cpp	/^int Zk::checkAndCreateZnode(string path) {$/;"	f	class:Zk
+checkFile	Log.cpp	/^int Log::checkFile(const int year, const int mon, const int day){$/;"	f	class:Log
+checkService	MultiThread.cpp	/^void* checkService(void* args) {$/;"	f
+checkServiceThread	MultiThread.cpp	/^static pthread_t checkServiceThread[MAX_THREAD_NUM];$/;"	v	file:
+chroot	zk_adaptor.h	/^    char *chroot;$/;"	m	struct:_zhandle
+clear	ServiceItem.cpp	/^void ServiceItem::clear() {$/;"	f	class:ServiceItem
+clearServiceMap	Config.cpp	/^void Config::clearServiceMap() {$/;"	f	class:Config
+client_id	zk_adaptor.h	/^    clientid_t client_id;$/;"	m	struct:_zhandle
+client_id	zookeeper.h	/^    int64_t client_id;$/;"	m	struct:__anon8
+clientid_t	zookeeper.h	/^} clientid_t;$/;"	t	typeref:struct:__anon8
+close_requested	zk_adaptor.h	/^    volatile int close_requested;$/;"	m	struct:_zhandle
+complete	zk_adaptor.h	/^    int complete;$/;"	m	struct:sync_completion
+completion	zk_adaptor.h	/^     pthread_t completion;$/;"	m	struct:adaptor_threads
+completion	zk_adaptor.h	/^    void_completion_t completion;$/;"	m	struct:_auth_info
+completion_head_t	zk_adaptor.h	/^} completion_head_t;$/;"	t	typeref:struct:_completion_head
+completions_to_process	zk_adaptor.h	/^    completion_head_t completions_to_process; \/* completions that are ready to run *\/$/;"	m	struct:_zhandle
+cond	zk_adaptor.h	/^     pthread_cond_t cond;       \/\/ barrier's conditional$/;"	m	struct:adaptor_threads
+cond	zk_adaptor.h	/^    pthread_cond_t cond;$/;"	m	struct:_completion_head
+cond	zk_adaptor.h	/^    pthread_cond_t cond;$/;"	m	struct:sync_completion
+conf	LoadBalance.h	/^	Config* conf;$/;"	m	class:LoadBalance
+conf	MultiThread.cpp	/^static Config* conf;$/;"	v	file:
+conf	ServiceListener.h	/^	Config* conf;$/;"	m	class:ServiceListener
 confPath	ConstDef.h	/^const string confPath = "conf\/monitor.conf"; $/;"	v
 connRetryCount	ConstDef.h	/^const string connRetryCount = "connect_retry_count";$/;"	v
+connect_index	zk_adaptor.h	/^    int connect_index; \/* The index of the address to connect to *\/$/;"	m	struct:_zhandle
+connect_req	zk_adaptor.h	/^struct connect_req {$/;"	s
+context	zk_adaptor.h	/^    void *context;$/;"	m	struct:_zhandle
+createZnode	Zk.cpp	/^int Zk::createZnode(string path) {$/;"	f	class:Zk
+curLogFileName	Log.cpp	/^char Log::curLogFileName[128] = {0};$/;"	m	class:Log	file:
 curLogFileName	Log.h	/^	static char curLogFileName[128];$/;"	m	class:Log
+curr_offset	zk_adaptor.h	/^    int curr_offset; \/* This is the offset into the header followed by offset into the buffer *\/$/;"	m	struct:_buffer_list
 daemonMode	ConstDef.h	/^const string daemonMode = "daemon_mode";$/;"	v
+daemonize	Process.cpp	/^int Process::daemonize() {$/;"	f	class:Process
+data	zk_adaptor.h	/^        } data;$/;"	m	union:sync_completion::__anon2	typeref:struct:sync_completion::__anon2::__anon4
+data	zk_adaptor.h	/^    const char* data;$/;"	m	struct:_auth_info
+data_completion_t	zookeeper.h	/^typedef void (*data_completion_t)(int rc, const char *value, int value_len,$/;"	t
+destroyEnv	LoadBalance.cpp	/^int LoadBalance::destroyEnv() {$/;"	f	class:LoadBalance
+destroyEnv	ServiceListener.cpp	/^int ServiceListener::destroyEnv() {$/;"	f	class:ServiceListener
+destroyEnv	Zk.cpp	/^void Zk::destroyEnv() {$/;"	f	class:Zk
+dp	Util.h	8;"	d
+fd	zk_adaptor.h	/^    int fd; \/* the descriptor used to talk to zookeeper *\/$/;"	m	struct:_zhandle
+fp	Log.cpp	/^FILE* Log::fp = NULL;$/;"	m	class:Log	file:
+fp	Log.h	/^	static FILE* fp;$/;"	m	class:Log
+getAddr	ServiceItem.cpp	/^void ServiceItem::getAddr(struct in_addr* addr) {$/;"	f	class:ServiceItem
+getAddrByHost	ServiceListener.cpp	/^int ServiceListener::getAddrByHost(const char* host, struct in_addr* addr) {$/;"	f	class:ServiceListener
+getAllIp	ServiceListener.cpp	/^int ServiceListener::getAllIp(const vector<string> serviceFather) {$/;"	f	class:ServiceListener
+getConnRetryCount	Config.cpp	/^int Config::getConnRetryCount(){$/;"	f	class:Config
+getConnectTimeout	ServiceItem.cpp	/^int ServiceItem::getConnectTimeout() {$/;"	f	class:ServiceItem
+getHost	ServiceItem.cpp	/^string ServiceItem::getHost() {$/;"	f	class:ServiceItem
 getInstance	Config.cpp	/^Config* Config::getInstance(){$/;"	f	class:Config
+getInstanceName	Config.cpp	/^string Config::getInstanceName(){$/;"	f	class:Config
+getLogLevel	Config.cpp	/^int Config::getLogLevel(){$/;"	f	class:Config
+getLogLevelStr	Log.cpp	/^string Log::getLogLevelStr(const int level) {$/;"	f	class:Log
+getMd5ToServiceFather	LoadBalance.cpp	/^int LoadBalance::getMd5ToServiceFather() {$/;"	f	class:LoadBalance
+getMonitorHostname	Config.cpp	/^string Config::getMonitorHostname(){$/;"	f	class:Config
+getMonitorList	Config.cpp	/^string Config::getMonitorList() {$/;"	f	class:Config
+getMonitors	LoadBalance.cpp	/^int LoadBalance::getMonitors() {$/;"	f	class:LoadBalance
+getMyServiceFather	LoadBalance.cpp	/^const vector<string>& LoadBalance::getMyServiceFather() {$/;"	f	class:LoadBalance
+getNodeList	Config.cpp	/^string Config::getNodeList() {$/;"	f	class:Config
+getPort	ServiceItem.cpp	/^int ServiceItem::getPort() {$/;"	f	class:ServiceItem
+getScanInterval	Config.cpp	/^int Config::getScanInterval(){$/;"	f	class:Config
+getServiceFather	ServiceItem.cpp	/^const string& ServiceItem::getServiceFather() {$/;"	f	class:ServiceItem
+getServiceFatherStatus	Config.cpp	/^int Config::getServiceFatherStatus(const string& serviceFather, int status) {$/;"	f	class:Config
+getServiceFatherToIp	Config.cpp	/^unordered_map<string, unordered_set<string>>& Config::getServiceFatherToIp() {$/;"	f	class:Config
+getServiceMap	Config.cpp	/^map<string, ServiceItem> Config::getServiceMap() {$/;"	f	class:Config
+getStatus	ServiceItem.cpp	/^int ServiceItem::getStatus() {$/;"	f	class:ServiceItem
+getZkHost	Config.cpp	/^string Config::getZkHost(){$/;"	f	class:Config
+getZkLogPath	Config.cpp	/^string Config::getZkLogPath(){$/;"	f	class:Config
+getZkRecvTimeout	Config.cpp	/^int Config::getZkRecvTimeout() {$/;"	f	class:Config
+head	zk_adaptor.h	/^    struct _buffer_list *volatile head;$/;"	m	struct:_buffer_head
+head	zk_adaptor.h	/^    struct _completion_list *volatile head;$/;"	m	struct:_completion_head
+hostname	zk_adaptor.h	/^    char *hostname; \/* the hostname of zookeeper *\/$/;"	m	struct:_zhandle
+init	Log.cpp	/^int Log::init(const int ll) {$/;"	f	class:Log
+init	MultiThread.cpp	/^void init(Zk* zk_input, const vector<string>& myServiceFather){$/;"	f
+initEnv	LoadBalance.cpp	/^int LoadBalance::initEnv(){$/;"	f	class:LoadBalance
+initEnv	ServiceListener.cpp	/^int ServiceListener::initEnv() {$/;"	f	class:ServiceListener
+initEnv	Zk.cpp	/^int Zk::initEnv(const string zkHost, const string zkLogPath, const int recvTimeout) {$/;"	f	class:Zk
+input_buffer	zk_adaptor.h	/^    buffer_list_t *input_buffer; \/* the current buffer being read in *\/$/;"	m	struct:_zhandle
 instanceName	ConstDef.h	/^const string instanceName = "instance_name";$/;"	v
+io	zk_adaptor.h	/^     pthread_t io;$/;"	m	struct:adaptor_threads
+ipPort	LoadBalance.h	/^	unordered_set<string> ipPort;$/;"	m	class:LoadBalance
+isAutoStart	Config.cpp	/^int Config::isAutoStart(){$/;"	f	class:Config
+isDaemonMode	Config.cpp	/^int Config::isDaemonMode(){$/;"	f	class:Config
+isOnlyOneUp	MultiThread.cpp	/^bool isOnlyOneUp(string node, int val) {$/;"	f
+isProcessRunning	Process.cpp	/^bool Process::isProcessRunning(const string& processName) {$/;"	f	class:Process
+isServiceExist	MultiThread.cpp	/^int isServiceExist(struct in_addr *addr, char* host, int port, int timeout, int curStatus) {$/;"	f
+last	zk_adaptor.h	/^    struct _buffer_list *last;$/;"	m	struct:_buffer_head	typeref:struct:_buffer_head::_buffer_list
+last	zk_adaptor.h	/^    struct _completion_list *last;$/;"	m	struct:_completion_head	typeref:struct:_completion_head::_completion_list
+lastZxidSeen	zk_adaptor.h	/^    int64_t lastZxidSeen;$/;"	m	struct:connect_req
+last_ping	zk_adaptor.h	/^    struct timeval last_ping; \/* The time that the last PING was sent *\/$/;"	m	struct:_zhandle	typeref:struct:_zhandle::timeval
+last_recv	zk_adaptor.h	/^    struct timeval last_recv; \/* The time that the last message was received *\/$/;"	m	struct:_zhandle	typeref:struct:_zhandle::timeval
+last_send	zk_adaptor.h	/^    struct timeval last_send; \/* The time that the last message was sent *\/$/;"	m	struct:_zhandle	typeref:struct:_zhandle::timeval
+last_zxid	zk_adaptor.h	/^    long long last_zxid;$/;"	m	struct:_zhandle
+len	zk_adaptor.h	/^    int len; \/* This represents the length of sizeof(header) + length of buffer *\/$/;"	m	struct:_buffer_list
+len	zk_adaptor.h	/^    int32_t len;$/;"	m	struct:prime_struct
+list	qconf-monitor.sh	/^list () {$/;"	f
 load	Config.cpp	/^int Config::load(){$/;"	f	class:Config
-logFile	Log.h	/^	static FILE* logFile;$/;"	m	class:Log
+loadAllService	ServiceListener.cpp	/^int ServiceListener::loadAllService() {$/;"	f	class:ServiceListener
+loadService	ServiceListener.cpp	/^int ServiceListener::loadService(string path, string serviceFather, string ipPort, vector<int>& st) {$/;"	f	class:ServiceListener
+lock	x86_spinlocks.h	/^   volatile unsigned int lock;$/;"	m	struct:__anon1
+lock	zk_adaptor.h	/^     pthread_mutex_t lock;      \/\/ ... and a lock$/;"	m	struct:adaptor_threads
+lock	zk_adaptor.h	/^     pthread_mutex_t lock;$/;"	m	struct:_auth_list_head
+lock	zk_adaptor.h	/^    pthread_mutex_t lock;$/;"	m	struct:_buffer_head
+lock	zk_adaptor.h	/^    pthread_mutex_t lock;$/;"	m	struct:_completion_head
+lock	zk_adaptor.h	/^    pthread_mutex_t lock;$/;"	m	struct:sync_completion
+locked	x86_spinlocks.h	/^   volatile int locked;$/;"	m	struct:__anon1
+logFileNamePrefix	ConstDef.h	/^const string logFileNamePrefix = "qconf-monitor.log";$/;"	v
 logLevel	ConstDef.h	/^const string logLevel = "log_level";$/;"	v
+logLevel	Log.cpp	/^int Log::logLevel = LOG_WARNING;$/;"	m	class:Log	file:
 logLevel	Log.h	/^	static int logLevel;$/;"	m	class:Log
-logPath	ConstDef.h	/^const string logPath = "zk_log";$/;"	v
+logLevelitos	Log.cpp	/^string Log::logLevelitos[7] = {"FATAL_ERROR", "ERROR", "WARNING", "NOTICE", "INFO", "TRACE", "DEBUG"};$/;"	m	class:Log	file:
+logLevelitos	Log.h	/^	static string logLevelitos[7];$/;"	m	class:Log
+logPath	ConstDef.h	/^const string logPath = "log\/";$/;"	v
 main	Agent.cpp	/^int main(int argc, char** argv){$/;"	f
 maxLogLevel	ConstDef.h	/^constexpr int maxLogLevel = 6;$/;"	v
+md5ToServiceFather	LoadBalance.h	/^	map<string, string> md5ToServiceFather;$/;"	m	class:LoadBalance
 minLogLevel	ConstDef.h	/^constexpr int minLogLevel = 0;$/;"	v
+modifyServiceFatherStatus	Config.cpp	/^int Config::modifyServiceFatherStatus(const string& serviceFather, int status, int op) {$/;"	f	class:Config
+modifyServiceFatherStatus	Config.cpp	/^int Config::modifyServiceFatherStatus(const string& serviceFather, vector<int>& statusv) {$/;"	f	class:Config
+monitors	LoadBalance.h	/^	unordered_set<string> monitors;$/;"	m	class:LoadBalance
+mutex	Log.cpp	/^pthread_mutex_t Log::mutex;$/;"	m	class:Log	file:
 mutex	Log.h	/^	static pthread_mutex_t mutex;$/;"	m	class:Log
+myServiceFather	LoadBalance.h	/^	vector<string> myServiceFather;$/;"	m	class:LoadBalance
+next	zk_adaptor.h	/^    struct _auth_info *next;$/;"	m	struct:_auth_info	typeref:struct:_auth_info::_auth_info
+next	zk_adaptor.h	/^    struct _buffer_list *next;$/;"	m	struct:_buffer_list	typeref:struct:_buffer_list::_buffer_list
+next_deadline	zk_adaptor.h	/^    struct timeval next_deadline; \/* The time of the next deadline *\/$/;"	m	struct:_zhandle	typeref:struct:_zhandle::timeval
+outstanding_sync	zk_adaptor.h	/^    int outstanding_sync; \/* Number of outstanding synchronous requests *\/$/;"	m	struct:_zhandle
+passwd	zk_adaptor.h	/^    char passwd[16];$/;"	m	struct:connect_req
+passwd	zk_adaptor.h	/^    char passwd[16];$/;"	m	struct:prime_struct
+passwd	zookeeper.h	/^    char passwd[16];$/;"	m	struct:__anon8
+passwd_len	zk_adaptor.h	/^    int32_t passwd_len;$/;"	m	struct:connect_req
+passwd_len	zk_adaptor.h	/^    int32_t passwd_len;$/;"	m	struct:prime_struct
+prime_struct	zk_adaptor.h	/^struct prime_struct {$/;"	s
+primer_buffer	zk_adaptor.h	/^    struct _buffer_list primer_buffer; \/* The buffer used for the handshake at the start of a connection *\/$/;"	m	struct:_zhandle	typeref:struct:_zhandle::_buffer_list
+primer_storage	zk_adaptor.h	/^    struct prime_struct primer_storage; \/* the connect response *\/$/;"	m	struct:_zhandle	typeref:struct:_zhandle::prime_struct
+primer_storage_buffer	zk_adaptor.h	/^    char primer_storage_buffer[40]; \/* the true size of primer_storage *\/$/;"	m	struct:_zhandle
 printConfig	Util.cpp	/^int Util::printConfig(){$/;"	f	class:Util
+printLog	Log.cpp	/^int Log::printLog(const char* fileName, const int line, const int level, const char* format, ...) {$/;"	f	class:Log
+printMap	Config.cpp	/^int Config::printMap() {$/;"	f	class:Config
+printServiceMap	Util.cpp	/^int Util::printServiceMap() {$/;"	f	class:Util
+priority	MultiThread.cpp	/^static list<string> priority;$/;"	v	file:
+processFileMsg	Process.cpp	/^int Process::processFileMsg(const string cmdFile) {$/;"	f	class:Process
+processKeepalive	Process.cpp	/^int Process::processKeepalive(int& childExitStatus, const string pidFile) {$/;"	f	class:Process
+protocolVersion	zk_adaptor.h	/^    int32_t protocolVersion;$/;"	m	struct:connect_req
+protocolVersion	zk_adaptor.h	/^    int32_t protocolVersion;$/;"	m	struct:prime_struct
+rc	zk_adaptor.h	/^    int rc;$/;"	m	struct:sync_completion
+recv_timeout	zk_adaptor.h	/^    int recv_timeout; \/* The maximum amount of time that can go by without $/;"	m	struct:_zhandle
+ref_counter	zk_adaptor.h	/^    int32_t ref_counter;$/;"	m	struct:_zhandle
+registerMonitor	Zk.cpp	/^int Zk::registerMonitor(string path) {$/;"	f	class:Zk
+reload	qconf-monitor.sh	/^reload () {$/;"	f
 resetConfig	Config.cpp	/^int Config::resetConfig(){$/;"	f	class:Config
+runMainThread	MultiThread.cpp	/^int runMainThread(Zk* zk_input, const vector<string>& myServiceFather) {$/;"	f
 scanInterval	ConstDef.h	/^const string scanInterval = "scan_interval";$/;"	v
+scheme	zk_adaptor.h	/^    char* scheme;$/;"	m	struct:_auth_info
+self_pipe	zk_adaptor.h	/^     int self_pipe[2];$/;"	m	struct:adaptor_threads
+sent_requests	zk_adaptor.h	/^    completion_head_t sent_requests; \/* The outstanding requests *\/$/;"	m	struct:_zhandle
+serviceFather	MultiThread.cpp	/^static vector<string> serviceFather;$/;"	v	file:
+serviceFatherStatus	Config.h	/^	unordered_map<string, vector<int>> serviceFatherStatus;$/;"	m	class:Config
+serviceFatherToIp	Config.h	/^	unordered_map<string, unordered_set<string>> serviceFatherToIp;$/;"	m	class:Config
+serviceFatherToIp	ServiceListener.h	/^	unordered_map<string, unordered_set<string>> serviceFatherToIp;$/;"	m	class:ServiceListener
+sessionId	zk_adaptor.h	/^    int64_t sessionId;$/;"	m	struct:connect_req
+sessionId	zk_adaptor.h	/^    int64_t sessionId;$/;"	m	struct:prime_struct
+setAddr	ServiceItem.cpp	/^int ServiceItem::setAddr(struct in_addr* addr) {$/;"	f	class:ServiceItem
+setConnectTimeout	ServiceItem.cpp	/^int ServiceItem::setConnectTimeout(int timeout) {$/;"	f	class:ServiceItem
+setHost	ServiceItem.cpp	/^int ServiceItem::setHost(string ip) {$/;"	f	class:ServiceItem
+setPort	ServiceItem.cpp	/^int ServiceItem::setPort(int port) {$/;"	f	class:ServiceItem
+setServiceFather	ServiceItem.cpp	/^int ServiceItem::setServiceFather(string serviceFather) {$/;"	f	class:ServiceItem
+setServiceFatherToIp	Config.cpp	/^int Config::setServiceFatherToIp(unordered_map<string, unordered_set<string>> sft) {$/;"	f	class:Config
+setServiceMap	Config.cpp	/^int Config::setServiceMap(string node, int val) {$/;"	f	class:Config
+setStatus	ServiceItem.cpp	/^int ServiceItem::setStatus(int status) {$/;"	f	class:ServiceItem
 setValueInt	Config.cpp	/^int Config::setValueInt(const string& key, const string& value){$/;"	f	class:Config
 setValueStr	Config.cpp	/^int Config::setValueStr(const string& key, const string& value){$/;"	f	class:Config
+setZnode	Zk.cpp	/^int Zk::setZnode(string node, string data) {$/;"	f	class:Zk
+sigForward	Process.cpp	/^void Process::sigForward(const int sig) {$/;"	f	class:Process
+sigHandler	Process.cpp	/^void Process::sigHandler(const int sig) {$/;"	f	class:Process
+socket_readable	zk_adaptor.h	/^    struct timeval socket_readable;$/;"	m	struct:_zhandle	typeref:struct:_zhandle::timeval
+spinlock_init	x86_spinlocks.h	10;"	d
+spinlock_lock	x86_spinlocks.h	/^static inline void spinlock_lock(spinlock_t* rw)$/;"	f
+spinlock_t	x86_spinlocks.h	/^}spinlock_t;$/;"	t	typeref:struct:__anon1
+spinlock_try_lock	x86_spinlocks.h	12;"	d
+spinlock_unlock	x86_spinlocks.h	/^static inline void spinlock_unlock(spinlock_t* rw) {$/;"	f
 split	Util.cpp	/^vector<string> Util::split(const string& str, const char separator){$/;"	f	class:Util
+start	qconf-monitor.sh	/^start () {$/;"	f
+stat	zk_adaptor.h	/^            struct Stat stat;$/;"	m	struct:sync_completion::__anon2::__anon4	typeref:struct:sync_completion::__anon2::__anon4::Stat
+stat	zk_adaptor.h	/^            struct Stat stat;$/;"	m	struct:sync_completion::__anon2::__anon5	typeref:struct:sync_completion::__anon2::__anon5::Stat
+stat	zk_adaptor.h	/^        struct Stat stat;$/;"	m	union:sync_completion::__anon2	typeref:struct:sync_completion::__anon2::Stat
+stat2	zk_adaptor.h	/^            struct Stat stat2;$/;"	m	struct:sync_completion::__anon2::__anon6	typeref:struct:sync_completion::__anon2::__anon6::Stat
+stat_completion_t	zookeeper.h	/^typedef void (*stat_completion_t)(int rc, const struct Stat *stat,$/;"	t
+state	zk_adaptor.h	/^    int state; \/* 0=>inactive, >0 => active *\/$/;"	m	struct:_auth_info
+state	zk_adaptor.h	/^    volatile int state;$/;"	m	struct:_zhandle
+stop	qconf-monitor.sh	/^stop () {$/;"	f
+str	zk_adaptor.h	/^            char *str;$/;"	m	struct:sync_completion::__anon2::__anon3
+str	zk_adaptor.h	/^        } str;$/;"	m	union:sync_completion::__anon2	typeref:struct:sync_completion::__anon2::__anon3
+str_len	zk_adaptor.h	/^            int str_len;$/;"	m	struct:sync_completion::__anon2::__anon3
+string_completion_t	zookeeper.h	/^        (*string_completion_t)(int rc, const char *value, const void *data);$/;"	t
+strings_completion_t	zookeeper.h	/^typedef void (*strings_completion_t)(int rc,$/;"	t
+strings_stat_completion_t	zookeeper.h	/^typedef void (*strings_stat_completion_t)(int rc,$/;"	t
+strs2	zk_adaptor.h	/^            struct String_vector strs2;$/;"	m	struct:sync_completion::__anon2::__anon6	typeref:struct:sync_completion::__anon2::__anon6::String_vector
+strs2	zk_adaptor.h	/^        struct String_vector strs2;$/;"	m	union:sync_completion::__anon2	typeref:struct:sync_completion::__anon2::String_vector
+strs_stat	zk_adaptor.h	/^        } strs_stat;$/;"	m	union:sync_completion::__anon2	typeref:struct:sync_completion::__anon2::__anon6
+sync_completion	zk_adaptor.h	/^struct sync_completion {$/;"	s
+threadPos	MultiThread.cpp	/^static map<pthread_t, size_t> threadPos;$/;"	v	file:
+threadsToWait	zk_adaptor.h	/^     int threadsToWait;         \/\/ barrier$/;"	m	struct:adaptor_threads
+timeOut	zk_adaptor.h	/^    int32_t timeOut;$/;"	m	struct:connect_req
+timeOut	zk_adaptor.h	/^    int32_t timeOut;$/;"	m	struct:prime_struct
+to_process	zk_adaptor.h	/^    buffer_head_t to_process; \/* The buffers that have been read and are ready to be processed. *\/$/;"	m	struct:_zhandle
+to_send	zk_adaptor.h	/^    buffer_head_t to_send; \/* The packets queued to send *\/$/;"	m	struct:_zhandle
 trim	Util.cpp	/^int Util::trim(string& str) {$/;"	f	class:Util
+tryConnect	MultiThread.cpp	/^int tryConnect(string curServiceFather) {$/;"	f
+u	zk_adaptor.h	/^    } u;$/;"	m	struct:sync_completion	typeref:union:sync_completion::__anon2
+updateConf	MultiThread.cpp	/^int updateConf(string node, int val) {$/;"	f
+updateService	MultiThread.cpp	/^void* updateService(void* args) {$/;"	f
+updateServiceInfo	MultiThread.cpp	/^static unordered_map<string, int> updateServiceInfo;$/;"	v	file:
+updateServiceLock	MultiThread.cpp	/^static spinlock_t updateServiceLock;$/;"	v	file:
+updateServiceThread	MultiThread.cpp	/^static pthread_t updateServiceThread;$/;"	v	file:
+updateZk	MultiThread.cpp	/^int updateZk(string node, int val) {$/;"	f
+version	qconf-monitor.sh	/^version () {$/;"	f
+void_completion_t	zookeeper.h	/^typedef void (*void_completion_t)(int rc, const void *data);$/;"	t
+watcher	LoadBalance.cpp	/^void watcher(zhandle_t* zhandle, int type, int state, const char* node, void* context) {$/;"	f
+watcher	ServiceListener.cpp	/^void watcher(zhandle_t* zhandle, int type, int state, const char* node, void* context) {$/;"	f
+watcher	Zk.cpp	/^void watcher(zhandle_t* zhandle, int type, int state, const char* node, void* context){}$/;"	f
+watcher	zk_adaptor.h	/^    watcher_fn watcher; \/* the registered watcher *\/$/;"	m	struct:_zhandle
+watcher_fn	zookeeper.h	/^typedef void (*watcher_fn)(zhandle_t *zh, int type, $/;"	t
+writeToFile	Util.cpp	/^int Util::writeToFile(const string content, const string fileName) {$/;"	f	class:Util
+yield	x86_spinlocks.h	/^static inline void yield()$/;"	f
+zErrorHandler	Zk.cpp	/^void Zk::zErrorHandler(const int& ret) {$/;"	f	class:Zk
+zh	LoadBalance.h	/^	zhandle_t* zh;$/;"	m	class:LoadBalance
+zh	ServiceListener.h	/^	zhandle_t* zh;$/;"	m	class:ServiceListener
+zh_lock	zk_adaptor.h	/^     pthread_mutex_t zh_lock;   \/\/ critical section lock$/;"	m	struct:adaptor_threads
+zhandle_t	zookeeper.h	/^typedef struct _zhandle zhandle_t;$/;"	t	typeref:struct:_zhandle
+zk	MultiThread.cpp	/^static Zk* zk;$/;"	v	file:
+zkGetChildren	LoadBalance.cpp	/^int LoadBalance::zkGetChildren(const string path, struct String_vector* children) {$/;"	f	class:LoadBalance
+zkGetChildren	ServiceListener.cpp	/^int ServiceListener::zkGetChildren(const string path, struct String_vector* children) {$/;"	f	class:ServiceListener
+zkGetNode	LoadBalance.cpp	/^int LoadBalance::zkGetNode(const char* md5Path, char* serviceFather, int* dataLen) {$/;"	f	class:LoadBalance
+zkGetNode	ServiceListener.cpp	/^int ServiceListener::zkGetNode(const char* path, char* data, int* dataLen) {$/;"	f	class:ServiceListener
 zkHost	ConstDef.h	/^const string zkHost = "zookeeper.";$/;"	v
+zkLogPath	ConstDef.h	/^const string zkLogPath = "zk_log";$/;"	v
+znodeExist	Zk.cpp	/^bool Zk::znodeExist(const string& path) {$/;"	f	class:Zk
 ~Config	Config.cpp	/^Config::~Config(){$/;"	f	class:Config
+~LoadBalance	LoadBalance.cpp	/^LoadBalance::~LoadBalance(){$/;"	f	class:LoadBalance
+~ServiceItem	ServiceItem.cpp	/^ServiceItem::~ServiceItem(){$/;"	f	class:ServiceItem
+~ServiceListener	ServiceListener.cpp	/^ServiceListener::~ServiceListener() {$/;"	f	class:ServiceListener
+~Zk	Zk.cpp	/^Zk::~Zk(){$/;"	f	class:Zk
