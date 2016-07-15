@@ -10,23 +10,27 @@
 #include <zookeeper.h>
 #include <zk_adaptor.h>
 #include "Config.h"
+#include "x86_spinlocks.h"
 using namespace std;
 
 class LoadBalance {
 public:
-	LoadBalance();
+	zhandle_t* zh;
+	static bool reBalance;
+	static LoadBalance* lbInstance;
+	Config* conf;
+
+	spinlock_t md5ToServiceFatherLock;
+
     //use map but not unordered_map so it can be sorted autonatically
     //存的是md5节点和对应的serviceFather节点
 	map<string, string> md5ToServiceFather;
 	unordered_set<string> monitors;
-	unordered_set<string> ipPort;
 	vector<string> myServiceFather;
-	zhandle_t* zh;
+
+	LoadBalance();
 	int initEnv();
 	int destroyEnv();
-	Config* conf;
-	static LoadBalance* lbInstance;
-	static bool reBalance;
     
 public:
 	~LoadBalance();
@@ -36,12 +40,14 @@ public:
 	int zkGetNode(const char* md5Path, char* serviceFather, int* dataLen);
 	
 	int getMd5ToServiceFather();
+	void updateMd5ToServiceFather(const string& md5Path, const string& serviceFather);
 	int getMonitors(bool flag = false);
 	int balance(bool flag = false);
-	const vector<string>& getMyServiceFather();
+	const vector<string> getMyServiceFather();
 
 	static void watcher(zhandle_t* zhandle, int type, int state, const char* path, void* context);
 	static void processChildEvent(zhandle_t* zhandle, const string path);
+	static void processChangedEvent(zhandle_t* zhandle, const string path);
 
 	static void setReBalance();
 	static void clearReBalance();

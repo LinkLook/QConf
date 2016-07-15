@@ -1,12 +1,11 @@
-#include "ServiceItem.h"
 #include <map>
 #include <cstdio>
 #include <string>
 #include <iostream>
-//support in_addr. It's a ip struct
+#include <cstring>
 #include <netinet/in.h>
 #include "ConstDef.h"
-#include <cstring>
+#include "ServiceItem.h"
 using namespace std;
 
 ServiceItem::ServiceItem():
@@ -94,6 +93,6 @@ int ServiceItem::setConnectTimeout(int timeout) {
     return 0;
 }
 
-const string& ServiceItem::getServiceFather() {
+const string ServiceItem::getServiceFather() {
     return _serviceFather;
 }

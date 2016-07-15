@@ -1,4 +1,3 @@
-#include "Zk.h"
 #include <cstring>
 #include <map>
 #include <cstdio>
@@ -6,17 +5,47 @@
 #include <sys/types.h>
 #include <string>
 #include <iostream>
+#include <errno.h>
 #include "ConstDef.h"
+#include "Config.h"
 #include "Util.h"
 #include "Log.h"
-#include <errno.h>
+#include "Zk.h"
+
 using namespace std;
 
-
-//临时解决方案，把_zkLockBuf作为非静态全局变量，使得它对所有文件可见。最后还是应该把注册monitor移到loadbalance类里才是正途
+extern bool _stop;
+//临时解决方案，把_zkLockBuf作为非静态全局变量，使得它对所有文件可见,这里面保存的是注册的monitor的名字
 char _zkLockBuf[512] = {0};
 
-//Zk中的watcher只负责处理与zk的会话断开怎么办，因为monitor注册是有zk完成的，这里断开相当于丢失了一个monitor，肯定要重新启动main loop
+Zk* Zk::zk = NULL;
+
+Zk* Zk::getInstance() {
+	if (!zk) {
+		zk = new Zk();
+	}
+	return zk;
+}
+
+void Zk::processDeleteEvent(zhandle_t* zhandle, const string& path) {
+	Zk* zk = Zk::getInstance();
+    Config* conf = Config::getInstance();
+	if (path == conf->getNodeList()) {
+		LOG(LOG_INFO, "node %s is removed", path.c_str());
+		zk->createZnode(path);
+	}
+	if (path == conf->getMonitorList()) {
+		LOG(LOG_INFO, "monitor dir %s is removed. Restart mail loop", path.c_str());
+        _stop = true;
+	}
+}
+
+/*
+The watcher in Zk will deal with events as follow:
+1. zk disconnect with zookeeper server -> restart main loop
+2. md5List is removed -> create it
+3. monitorList is removed -> restart main loop
+*/
 void Zk::watcher(zhandle_t* zhandle, int type, int state, const char* node, void* context){
 	dp();
 	switch (type) {
@@ -25,6 +54,7 @@ void Zk::watcher(zhandle_t* zhandle, int type, int state, const char* node, void
 				LOG(LOG_DEBUG, "[session state: ZOO_EXPIRED_STATA: -112]");
 				//todo 是否需要watchSession？
 				LOG(LOG_INFO, "restart the main loop!");
+				//直接设置_stop其实是一样的效果
 				kill(getpid(), SIGUSR2);
 			}
 			else {
@@ -39,6 +69,7 @@ void Zk::watcher(zhandle_t* zhandle, int type, int state, const char* node, void
             break;
         case DELETED_EVENT_DEF:
             LOG(LOG_DEBUG, "[ deleted event ] ...");
+            processDeleteEvent(zhandle, string(node));
             break;
         case CHANGED_EVENT_DEF:
             LOG(LOG_DEBUG, "[ changed event ] ...");
@@ -49,6 +80,7 @@ void Zk::watcher(zhandle_t* zhandle, int type, int state, const char* node, void
 }
 
 Zk::Zk():_zh(NULL), _recvTimeout(3000), _zkLogPath(""), _zkHost(""), _zkLogFile(NULL) {
+	conf = Config::getInstance();
 }
 
 int Zk::initEnv(const string zkHost, const string zkLogPath, const int recvTimeout) {
@@ -81,6 +113,7 @@ void Zk::destroyEnv() {
 	if (_zh) {
 		zookeeper_close(_zh);
 	}
+	zk = NULL;
 }
 
 Zk::~Zk(){
@@ -130,16 +163,20 @@ bool Zk::znodeExist(const string& path) {
 	}
 }
 
+//after create znode, set the watcher with zoo_exists
 int Zk::createZnode(string path) {
 	vector<string> nodeList = Util::split(path, '/');
 	string node("");
-	//根节点在zk中应该是必然存在的吧
+	//root should sure be exist
 	for (auto it = nodeList.begin(); it != nodeList.end(); ++it) {
         node += "/";
 		node += (*it);
 		int ret = zoo_create(_zh, node.c_str(), NULL, 0, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
 		if (ret == ZOK) {
 			LOG(LOG_INFO, "Create node succeeded. node: %s", node.c_str());
+			//add the watcher
+			struct Stat stat;
+			zoo_exists(_zh, node.c_str(), 1, &stat);
 		}
 		else if (ret == ZNODEEXISTS) {
 			LOG(LOG_INFO, "Create node .Node exists. node: %s", node.c_str());
@@ -174,7 +211,6 @@ int Zk::checkAndCreateZnode(string path) {
 }
 
 int Zk::registerMonitor(string path) {
-	//1.注册临时的顺序的节点
 	while (_zh) {
 		memset(_zkLockBuf, 0, sizeof(_zkLockBuf));
 		int ret = zoo_create(_zh, path.c_str(), NULL, 0, &ZOO_OPEN_ACL_UNSAFE, 

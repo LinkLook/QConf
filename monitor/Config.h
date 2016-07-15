@@ -6,13 +6,15 @@
 #include <vector>
 #include <unordered_map>
 #include "ServiceItem.h"
+#include "x86_spinlocks.h"
 using namespace std;
 
 class Config {
 private:
-	Config();
-	~Config();
 	static Config* _instance;
+
+	spinlock_t serviceMapLock;
+
 	int _daemonMode;
 	string _monitorHostname;
 	int _autoStart;
@@ -22,14 +24,17 @@ private:
 	std::string _instanceName;
 	std::string _zkHost;
 	std::string _zkLogPath;
-	//important. the key is the full path of ipPort and the value is serviceItem of this ipPort
-	map<string, ServiceItem> _serviceMap;
 	int _zkRecvTimeout;
 
+	//core data. the key is the full path of ipPort and the value is serviceItem of this ipPort
+	map<string, ServiceItem> _serviceMap;
+
+	Config();
 	int setValueInt(const string& key, const string& value);
 	int setValueStr(const string& key, const string& value);
 
 public:
+	~Config();
 	static Config* getInstance();
 	int load();
 	int resetConfig();
@@ -48,17 +53,15 @@ public:
 	string getNodeList();
 	string getMonitorList();
 
-	map<string, ServiceItem>& getServiceMap();
+	map<string, ServiceItem> getServiceMap();
 	int setServiceMap(string node, int val);
+	void clearServiceMap();
 
-	//这个名字不应该叫add，叫set，方便其他对象调用
 	int addService(string ipPath, ServiceItem serviceItem);
 	void deleteService(const string& ipPath);
 
-    ServiceItem& getServiceItem(const string& ipPath);
+    ServiceItem getServiceItem(const string& ipPath);
 	//put this method to class Util may be better
 	int printMap();
-
-	void clearServiceMap();
 };
 #endif

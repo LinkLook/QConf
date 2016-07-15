@@ -58,7 +58,7 @@ int main(int argc, char** argv){
             dp();
             delete _zk;
         }
-		_zk = new Zk();
+		_zk = Zk::getInstance();
 		string zkHost = conf->getZkHost();
 		string zkLogPath = conf->getZkLogPath();
 		int recvTimeout = conf->getZkRecvTimeout();
@@ -75,10 +75,6 @@ int main(int argc, char** argv){
 			sleep(2);
 			continue;
 		}
-
-		/******************************
-		// haven't consider watcher!!! 
-		******************************/
 
 		//check qconf_monitor_lock_node/default_instance/md5_list
 		if(_zk->checkAndCreateZnode(conf->getNodeList()) == M_OK) {
@@ -122,10 +118,11 @@ int main(int argc, char** argv){
 		}
 
 		while (1) {
+			cout << "second start" << endl;
+			LOG(LOG_INFO, " second loop start -> !!!!!!");
 			LoadBalance::clearReBalance();
 			//load balance
 			//get the service father. Stored in class LB
-			//新建一个负载均衡实例，然后需要填充这个实例中一些重要的数据
 			//todo，对每一步的异常都还没有进行考虑
 			LoadBalance* lb = LoadBalance::getInstance();
 			lb->getMd5ToServiceFather();
@@ -135,10 +132,8 @@ int main(int argc, char** argv){
 			//after load balance. Each monitor should load the service to Config
 			ServiceListener* serviceListener = ServiceListener::getInstance();
 			serviceListener->getAllIp();
-			//这里如何加锁也都还没考虑，因为加了watch之后(?)可能会有不止一个线程在操作的数据结构都需要加锁，目前还没有考虑，最后统一加吧
 			serviceListener->loadAllService();
-	        cout << "runMainThread" << endl;
-	     
+
 	     	//multiThread module
 	     	MultiThread* ml = MultiThread::getInstance(_zk);
 	        ml->runMainThread();
@@ -153,7 +148,6 @@ int main(int argc, char** argv){
 		}
 		delete _zk;
 	}
-
-    cout << "EXIT!!!" << endl;
+	LOG(LOG_ERROR, "EXIT main loop!!!");
 	return 0;
 }

@@ -1,4 +1,3 @@
-#include "MultiThread.h"
 #include <pthread.h>
 #include <iostream>
 #include <sys/types.h>
@@ -29,6 +28,7 @@
 #include "LoadBalance.h"
 #include "ServiceListener.h"
 #include "x86_spinlocks.h"
+#include "MultiThread.h"
 using namespace std;
 
 extern bool _stop;
@@ -70,10 +70,6 @@ bool MultiThread::isOnlyOneUp(string node, int val) {
 		//在锁内部直接把serviceFatherStatus改变了，up的-1，down的+1；
 		sl->modifyServiceFatherStatus(serviceFather, STATUS_UP, 1);
 		sl->modifyServiceFatherStatus(serviceFather, STATUS_DOWN, -1);
-		/*
-		--((conf->serviceFatherStatus)[serviceFather][STATUS_UP+1]);
-		++((conf->serviceFatherStatus)[serviceFather][STATUS_DOWN+1]);
-		*/
 		spinlock_unlock(&updateServiceLock);
 		ret = false;
 	}
@@ -137,7 +133,7 @@ void MultiThread::updateService() {
 			continue;
 		}
 		//可以进行更新
-		//1.更新zk，这应该不用设置watch，那最好就用zk类来做咯
+		//1.更新zk，这应该不用设置watch，那最好就用zk类来做
         updateZk(key, val);
 		//2.更新conf
 		updateConf(key, val);
@@ -309,17 +305,7 @@ int MultiThread::runMainThread() {
 	int schedule = NOSCHEDULE;
     //没有考虑异常，如pthread不成功等
 	pthread_create(&updateServiceThread, NULL, staticUpdateService, NULL);
-	unordered_map<string, unordered_set<string>> serviceFatherToIp = sl->getServiceFatherToIp();
-#ifdef DEBUGM
-    for (auto it1 = serviceFatherToIp.begin(); it1 != serviceFatherToIp.end(); ++it1) {
-        cout << it1->first << endl;
-        for (auto it2 = (it1->second).begin(); it2 != (it1->second).end(); ++it2) {
-            cout << *it2 << " ";
-        }
-        cout << endl;
-    }
-    cout << "finsh create up service" << endl;
-#endif
+
 	//这里要考虑如何分配检查线程了，应该可以做很多文章，比如记录每个father有多少个服务，如果很多就分配两个线程等等。这里先用最简单的，线程足够的情况下，一个serviceFather一个线程
 	int oldThreadNum = 0;
 	int newThreadNum = 0;
@@ -330,6 +316,7 @@ int MultiThread::runMainThread() {
 	//构思了一种思路，但这种思路其实最好把serviceFather和ip等数据封装成一个类。
 	//todo
 	while (1) {
+		unordered_map<string, unordered_set<string>> serviceFatherToIp = sl->getServiceFatherToIp();
 #ifdef DEBUGM
         cout << "xxxxxxxxxxx" << endl;
 #endif
