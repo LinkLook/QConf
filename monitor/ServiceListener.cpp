@@ -50,6 +50,7 @@ int ServiceListener::initEnv() {
 ServiceListener::ServiceListener() : zh(NULL) {
 	serviceFatherToIpLock = SPINLOCK_INITIALIZER;
 	serviceFatherStatusLock = SPINLOCK_INITIALIZER;
+    watchFlagLock = SPINLOCK_INITIALIZER;
 	conf = Config::getInstance();
 	lb = LoadBalance::getInstance();
 	//这是有道理的，因为后续还要加锁。把所有加锁的行为都放在modifyServiceFatherToIp里很好
@@ -249,10 +250,16 @@ void ServiceListener::processChangedEvent(zhandle_t* zhandle, const string& path
 	newStatus = atoi(data);
     size_t pos = path.rfind('/');
     string serviceFather = path.substr(0, pos);
-	sl->modifyServiceFatherStatus(serviceFather, oldStatus, -1);
-	sl->modifyServiceFatherStatus(serviceFather, newStatus, 1);
+    if (sl->getWatchFlag()) {
+        sl->clearWatchFlag();
+    }
+    else {
+	    sl->modifyServiceFatherStatus(serviceFather, oldStatus, -1);
+	    sl->modifyServiceFatherStatus(serviceFather, newStatus, 1);
+    }
 	//update serviceMap
-	(conf->getServiceItem(serviceFather)).setStatus(newStatus);
+	//(conf->getServiceItem(serviceFather)).setStatus(newStatus);
+    conf->setServiceMap(path, newStatus);
 }
 
 void ServiceListener::watcher(zhandle_t* zhandle, int type, int state, const char* path, void* context) {
@@ -387,6 +394,9 @@ int ServiceListener::loadService(string path, string serviceFather, string ipPor
 	int dataLen = 16;
 	zkGetNode(path.c_str(), data, &dataLen);
 	status = atoi(data);
+    if (status < -1 || status > 2) {
+        status = -1;
+    }
 	++(st[status + 1]);
 	//todo, 这里要判断异常，比如值不是允许的那几个
 	size_t pos = ipPort.find(':');
@@ -507,4 +517,23 @@ void ServiceListener::deleteIpPort(const string& serviceFather, const string& ip
 	spinlock_lock(&serviceFatherToIpLock);
 	serviceFatherToIp[serviceFather].erase(ipPort);
 	spinlock_unlock(&serviceFatherToIpLock);
+}
+
+void ServiceListener::setWatchFlag() {
+    spinlock_lock(&watchFlagLock);
+    watchFlag = true;
+    spinlock_unlock(&watchFlagLock);
+}
+void ServiceListener::clearWatchFlag() {
+    spinlock_lock(&watchFlagLock);
+    watchFlag = true;
+    spinlock_unlock(&watchFlagLock);
+}
+
+bool ServiceListener::getWatchFlag(){
+    bool ret;
+    spinlock_lock(&watchFlagLock);
+    ret = watchFlag;
+    spinlock_unlock(&watchFlagLock);
+    return ret;
 }

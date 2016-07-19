@@ -22,6 +22,7 @@ using namespace std;
 class MultiThread {
 private:
 	MultiThread(Zk*);
+	static bool threadError;
 	static MultiThread* mlInstance;
 	Config* conf;
 	ServiceListener* sl;
@@ -31,11 +32,21 @@ private:
 	//每个检查线程的pthread_t和该检车线程在线程池中的下标的对应关系
 	map<pthread_t, size_t> threadPos;
 	Zk* zk;
+	int serviceFatherNum;
+	//copy of myServiceFather in loadBalance
+	vector<string> serviceFathers;
+	vector<bool> hasThread;
+	spinlock_t hasThreadLock;
+
+	int waitingIndex;
+	spinlock_t waitingIndexLock;
 
 public:
 	~MultiThread();
+	//overload
 	static MultiThread* getInstance(Zk*);
     static MultiThread* getInstance();
+    
 	int runMainThread();
 	static void* staticUpdateService(void* args);
 	static void* staticCheckService(void* args);
@@ -47,5 +58,19 @@ public:
 	int updateConf(string node, int val);
 	int updateZk(string node, int val);
 	bool isOnlyOneUp(string node, int val);
+	bool isOnlyOneUp(string node);
+
+	static bool isThreadError();
+	static void setThreadError();
+	static void clearThreadError();
+
+	void setWaitingIndex(int val);
+	int getAndAddWaitingIndex();
+
+	void insertUpdateServiceInfo(const string& service, const int val);
+
+    void clearHasThread(int sz);
+    void setHasThread(int index, bool val);
+    bool getHasThread(int index);
 };
 #endif
