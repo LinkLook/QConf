@@ -53,10 +53,9 @@ ServiceListener::ServiceListener() : zh(NULL) {
     watchFlagLock = SPINLOCK_INITIALIZER;
 	conf = Config::getInstance();
 	lb = LoadBalance::getInstance();
-	//这是有道理的，因为后续还要加锁。把所有加锁的行为都放在modifyServiceFatherToIp里很好
+	//It makes sense. Make all locks occur in one function
 	modifyServiceFatherToIp(CLEAR, "");
 	serviceFatherStatus.clear();
-	initEnv();
 }
 
 ServiceListener::~ServiceListener() {
@@ -64,7 +63,6 @@ ServiceListener::~ServiceListener() {
 }
 
 //path is the path of ipPort
-//这几个函数的意义和调用关系不清晰
 void ServiceListener::modifyServiceFatherToIp(const string op, const string& path) {
 	if (op == CLEAR) {
 		spinlock_lock(&serviceFatherToIpLock);
@@ -188,15 +186,14 @@ void ServiceListener::modifyServiceFatherToIp(const string op, const string& pat
 }
 
 void ServiceListener::processDeleteEvent(zhandle_t* zhandle, const string& path) {
-	//只可能是某个服务被删除了，因为我只去get过这个节点，后续可以加异常处理
+	//It must be a service node. Because I do zoo_get only in service node
 	//update serviceFatherToIp
 	ServiceListener* sl = ServiceListener::getInstance();
 	sl->modifyServiceFatherToIp(DELETE, path);
 }
 
 void ServiceListener::processChildEvent(zhandle_t* zhandle, const string& path) {
-	//只可能是某个serviceFather子节点变化，因为我只get_child过这个节点
-	//这里这个path是serviceFather
+	//It must be a service father node. Because I do zoo_get_children only in service father node
 	ServiceListener* sl = ServiceListener::getInstance();
 	struct String_vector children = {0};
 	int ret = zoo_get_children(zhandle, path.c_str(), 1, &children);
@@ -206,7 +203,7 @@ void ServiceListener::processChildEvent(zhandle_t* zhandle, const string& path) 
 			LOG(LOG_INFO, "actually It's a delete event");
 		}
 		else {
-			//感觉很低效，可是新建了一个节点，好像只能把所有子节点都获取来，重新加一遍啊
+			//感觉很低效，可是新建了一个节点，好像只能把所有子节点都获取来，重新加一遍
 			LOG(LOG_INFO, "add new service");
 			for (int i = 0; i < children.count; ++i) {
 				string ipPort = string(children.data[i]);
@@ -217,7 +214,7 @@ void ServiceListener::processChildEvent(zhandle_t* zhandle, const string& path) 
 	}
 	else if (ret == ZNONODE) {
 		LOG(LOG_TRACE, "%s...out...node:%s not exist.", __FUNCTION__, path.c_str());
-		//这个serviceFather不存在了，可能是删除了 todo serviceFatherToIp这个数据结构里还是要加更多动作，比如删除serviceFather
+		//这个serviceFather不存在了，可能是删除了，这个事件由readBalance完成，也许这里也应该做点什么
 		//serviceFatherToIp.erase(path);
         return;
 	}
@@ -228,9 +225,9 @@ void ServiceListener::processChildEvent(zhandle_t* zhandle, const string& path) 
 }
 
 void ServiceListener::processChangedEvent(zhandle_t* zhandle, const string& path) {
-	ServiceListener* sl = ServiceListener::getInstance();
+	//ServiceListener* sl = ServiceListener::getInstance();
 	Config* conf = Config::getInstance();
-	int oldStatus = (conf->getServiceItem(path)).getStatus();
+	//int oldStatus = (conf->getServiceItem(path)).getStatus();
 
 	int newStatus = STATUS_UNKNOWN;
 	char data[16] = {0};
@@ -248,6 +245,7 @@ void ServiceListener::processChangedEvent(zhandle_t* zhandle, const string& path
         return;
     }
 	newStatus = atoi(data);
+	/*
     size_t pos = path.rfind('/');
     string serviceFather = path.substr(0, pos);
     if (sl->getWatchFlag()) {
@@ -257,8 +255,8 @@ void ServiceListener::processChangedEvent(zhandle_t* zhandle, const string& path
 	    sl->modifyServiceFatherStatus(serviceFather, oldStatus, -1);
 	    sl->modifyServiceFatherStatus(serviceFather, newStatus, 1);
     }
+    */
 	//update serviceMap
-	//(conf->getServiceItem(serviceFather)).setStatus(newStatus);
     conf->setServiceMap(path, newStatus);
 }
 
@@ -266,7 +264,7 @@ void ServiceListener::watcher(zhandle_t* zhandle, int type, int state, const cha
 	switch (type) {
 		case SESSION_EVENT_DEF:
 			if (state == ZOO_EXPIRED_SESSION_STATE) {
-				LOG(LOG_INFO, "[ session event ] state: ZOO_EXPIRED_SESSION_STATE");
+				LOG(LOG_INFO, "[ session event ] state: state");
 				LOG(LOG_INFO, "restart the main loop!");
 				kill(getpid(), SIGUSR2);
 			}
@@ -296,9 +294,13 @@ void ServiceListener::watcher(zhandle_t* zhandle, int type, int state, const cha
 }
 
 int ServiceListener::addChildren(const string serviceFather, struct String_vector children) {
+    if (children.count == 0) {
+       addIpPort(serviceFather, ""); 
+    }
 	for (int i = 0; i < children.count; ++i) {
 		string ip(children.data[i]);
 		addIpPort(serviceFather, ip);
+		LOG(LOG_INFO, "service father:%s, Ip:Port:%s", serviceFather.c_str(), ip.c_str());
 	}
 	return 0;
 }
@@ -331,9 +333,16 @@ int ServiceListener::getAllIp() {
 	for (auto it = serviceFather.begin(); it != serviceFather.end(); ++it) {
 		struct String_vector children = {0};
 		//get all ipPort belong to this serviceFather
-		zkGetChildren(*it, &children);
+		int status = zkGetChildren(*it, &children);
+		if (status != M_OK) {
+			LOG(LOG_ERROR, "get IP:Port failed. serviceFather:%s", (*it).c_str());
+			deallocate_String_vector(&children);
+            addIpPort(*it, "");
+			continue;
+		}
 		//add the serviceFather and ipPort to the map serviceFatherToIp
 		addChildren(*it, children);
+		deallocate_String_vector(&children);
 	}
 #ifdef DEBUGS
     cout << 55555555555 << endl;
@@ -356,7 +365,6 @@ int ServiceListener::zkGetNode(const char* path, char* data, int* dataLen) {
 		LOG(LOG_ERROR, "zhandle is NULL");
 		return M_ERR;
 	}
-	//todo 下面其实就是一个zoo_get，但是原来的设计中有很多错误判断，我这里先都跳过吧.而且原设计中先用了exist，原因是想知道这个节点的数据有多长，需要多大的buf去存放？
     LOG(LOG_INFO, "Path: %s, data: %s, *dataLen: %d", path, data, *dataLen);
 	int ret = zoo_get(zh, path, 1, data, dataLen, NULL);
 	if (ret == ZOK) {
@@ -376,29 +384,29 @@ int ServiceListener::zkGetNode(const char* path, char* data, int* dataLen) {
 
 int ServiceListener::getAddrByHost(const char* host, struct in_addr* addr) {
 	int ret = M_ERR;
-	//todo 关于如何加锁还没想好
-    //spinlock_lock(&_getaddr_spinlock);
-    struct hostent *ht; //// ht should be release?
+    struct hostent *ht;
     if ((ht = gethostbyname(host)) !=  NULL) {
         *addr = *((struct in_addr *)ht->h_addr);
         ret = M_OK;
     }   
-    //spinlock_unlock(&_getaddr_spinlock);
     return ret;
 }
 
-//todo 这里参数有重复，从path就可以知道其他两个的内容了
+//the args are repeat. But it's ok
 int ServiceListener::loadService(string path, string serviceFather, string ipPort, vector<int>& st) {
 	int status = STATUS_UNKNOWN;
 	char data[16] = {0};
 	int dataLen = 16;
-	zkGetNode(path.c_str(), data, &dataLen);
+	int ret = zkGetNode(path.c_str(), data, &dataLen);
+	if (ret != M_OK) {
+		LOG(LOG_ERROR, "get service status failed. service:%s", path.c_str());
+		return M_ERR;
+	}
 	status = atoi(data);
     if (status < -1 || status > 2) {
         status = -1;
     }
 	++(st[status + 1]);
-	//todo, 这里要判断异常，比如值不是允许的那几个
 	size_t pos = ipPort.find(':');
 	string ip = ipPort.substr(0, pos);
 	int port = atoi((ipPort.substr(pos+1)).c_str());
@@ -411,20 +419,26 @@ int ServiceListener::loadService(string path, string serviceFather, string ipPor
 	serviceItem.setAddr(&addr);
 	serviceItem.setServiceFather(serviceFather);
 	conf->addService(path, serviceItem);
-	return 0;
+    LOG(LOG_INFO, "load service succeed, service:%s, status:%d", path.c_str(), status);
+	return M_OK;
 }
 
 int ServiceListener::loadAllService() {
+	//here we need locks. Maybe we can remove it
+	spinlock_lock(&serviceFatherToIpLock);
 	for (auto it1 = serviceFatherToIp.begin(); it1 != serviceFatherToIp.end(); ++it1) {
 		string serviceFather = it1->first;
+		unordered_set<string> ips = it1->second;
+		spinlock_unlock(&serviceFatherToIpLock);
 		vector<int> status(4, 0);
-		for (auto it2 = (it1->second).begin(); it2 != (it1->second).end(); ++it2) {
+		for (auto it2 = ips.begin(); it2 != ips.end(); ++it2) {
 			string path = serviceFather + "/" + (*it2);
 			loadService(path, serviceFather, *it2, status);
 		}
-		//还是没有异常处理
 		modifyServiceFatherStatus(serviceFather, status);
+		spinlock_lock(&serviceFatherToIpLock);
 	}
+	spinlock_unlock(&serviceFatherToIpLock);
 #ifdef DEBUGSS
 	cout << 444444444 << endl;
 	for (auto it = serviceFatherStatus.begin(); it != serviceFatherStatus.end(); ++it) {
@@ -519,11 +533,16 @@ void ServiceListener::deleteIpPort(const string& serviceFather, const string& ip
 	spinlock_unlock(&serviceFatherToIpLock);
 }
 
+
+//这个标记一开始是用来区分zk节点的值是由monitor去改变的还是zk自己改变的
+//是为了使用serviceFatherStatus来判断是否仅剩一个up的服务节点的
+//最后发现这样还是不可行，因为网络的原因等，还是无法确认每次设置了标记位之后就清楚，在设置，暂时无用
 void ServiceListener::setWatchFlag() {
     spinlock_lock(&watchFlagLock);
     watchFlag = true;
     spinlock_unlock(&watchFlagLock);
 }
+
 void ServiceListener::clearWatchFlag() {
     spinlock_lock(&watchFlagLock);
     watchFlag = true;

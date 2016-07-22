@@ -21,7 +21,7 @@
 using namespace std;
 class MultiThread {
 private:
-	MultiThread(Zk*);
+	MultiThread();
 	static bool threadError;
 	static MultiThread* mlInstance;
 	Config* conf;
@@ -31,20 +31,21 @@ private:
 	list<string> priority;
 	//每个检查线程的pthread_t和该检车线程在线程池中的下标的对应关系
 	map<pthread_t, size_t> threadPos;
+    spinlock_t threadPosLock;
 	Zk* zk;
 	int serviceFatherNum;
 	//copy of myServiceFather in loadBalance
 	vector<string> serviceFathers;
+    spinlock_t serviceFathersLock;
+	//标记某个service father是否有一个线程在检查它
 	vector<bool> hasThread;
 	spinlock_t hasThreadLock;
-
+	//标记下一个等待被检查的service father
 	int waitingIndex;
 	spinlock_t waitingIndexLock;
 
 public:
 	~MultiThread();
-	//overload
-	static MultiThread* getInstance(Zk*);
     static MultiThread* getInstance();
     
 	int runMainThread();

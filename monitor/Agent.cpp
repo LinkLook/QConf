@@ -24,7 +24,7 @@ int main(int argc, char** argv){
 	Config* conf = Config::getInstance();
 	Util::printConfig();
 #ifdef REALSE
-	if (Process::isProcessRunning(MONITOR_PROCESS_NAME) == 1) {
+	if (Process::isProcessRunning(MONITOR_PROCESS_NAME)) {
 		LOG(LOG_ERROR, "Monitor is already running.");
 		return -1;
 	}
@@ -35,16 +35,18 @@ int main(int argc, char** argv){
 	if (conf->isAutoStart()) {
 		int childExitStatus = -1;
 		int ret = Process::processKeepalive(childExitStatus, PIDFILE);
-		//parent thread
+		//parent process
 		if (ret > 0) {
 			return childExitStatus;
 		}
 		else if (ret < 0) {
 			return -1;
 		}
-		//child process
 		else {
-
+			//child process write pid to PIDFILE
+			if (Util::writePid(PIDFILE.c_str()) != 0) {
+				return -1;
+			}
 		}
 	}
     //maybe we need it to make the child process wait a while
@@ -59,7 +61,8 @@ int main(int argc, char** argv){
             delete _zk;
         }
 		_zk = Zk::getInstance();
-		string zkHost = conf->getZkHost();
+		//choose a zk machine random
+		string zkHost = Util::chooseZkHostRandom();
 		string zkLogPath = conf->getZkLogPath();
 		int recvTimeout = conf->getZkRecvTimeout();
 
@@ -68,7 +71,7 @@ int main(int argc, char** argv){
 			LOG(LOG_INFO, "Zk init env succeeded. host:%s zk log path:%s", zkHost.c_str(), zkLogPath.c_str());
 		}
 		else {
-			LOG(LOG_ERROR, "Zk init env failed, retry");
+			LOG(LOG_ERROR, "Zk init env failed, host:%s, zk log path:%s", zkHost.c_str(), zkLogPath.c_str());
 			if (_zk) {
 				delete _zk;
 			}
@@ -106,7 +109,7 @@ int main(int argc, char** argv){
 		if (_zk->registerMonitor(conf->getMonitorList() + "/monitor_") == M_OK) {
 			LOG(LOG_INFO, "Monitor register success");
 			//wait other monitor to register
-			sleep(3);
+			//sleep(3);
 		}
 		else {
 			LOG(LOG_ERROR, "Monitor register failed");
@@ -116,31 +119,81 @@ int main(int argc, char** argv){
 			sleep(2);
 			continue;
 		}
-
+		/*
+		this loop is for load balance.
+		If rebalance is needed, the loop will be reiterate
+		*/
 		while (1) {
-			cout << "second start" << endl;
 			LOG(LOG_INFO, " second loop start -> !!!!!!");
 			LoadBalance::clearReBalance();
 			//load balance
-			//get the service father. Stored in class LB
-			//todo，对每一步的异常都还没有进行考虑
 			LoadBalance* lb = LoadBalance::getInstance();
-			lb->getMd5ToServiceFather();
-			lb->getMonitors();
-			lb->balance();
+			if (lb->initEnv() == M_OK) {
+				LOG(LOG_INFO, "init load balance env succeeded");
+			}
+			else {
+				LOG(LOG_ERROR, "init load balance env failed");
+				delete lb;
+				sleep(2);
+				continue;
+			}
+
+			if (lb->getMd5ToServiceFather() == M_OK) {
+				LOG(LOG_INFO, "get md5 to service father succeeded");
+			}
+			else {
+				LOG(LOG_ERROR, "get md5 to service father failed");
+				/*
+				how to deal with this in a better way?
+				if the reason of failure is node not exist, we should restart main loop
+				*/
+				delete lb;
+				sleep(2);
+				continue;
+			}
+
+			if (lb->getMonitors() == M_OK) {
+				LOG(LOG_INFO, "get monitors secceeded");
+			}
+			else {
+				LOG(LOG_INFO, "get monitors failed");
+				delete lb;
+				sleep(2);
+				continue;
+			}
+
+			if (lb->balance() == M_OK) {
+				LOG(LOG_INFO, "balance secceeded");
+			}
+			else {
+				LOG(LOG_INFO, "balance failed");
+				delete lb;
+				sleep(2);
+				continue;
+			}
 
 			//after load balance. Each monitor should load the service to Config
-			ServiceListener* serviceListener = ServiceListener::getInstance();
-			serviceListener->getAllIp();
-			serviceListener->loadAllService();
+			ServiceListener* sl = ServiceListener::getInstance();
+			if (sl->initEnv() == M_OK) {
+				LOG(LOG_INFO, "init service listener env succeeded");
+			}
+			else {
+				LOG(LOG_INFO, "init service listener env failed");
+				delete sl;
+				delete lb;
+				sleep(2);
+				continue;
+			}
+			sl->getAllIp();
+			sl->loadAllService();
 
 	     	//multiThread module
-	     	MultiThread* ml = MultiThread::getInstance(_zk);
+	     	MultiThread* ml = MultiThread::getInstance();
 	        ml->runMainThread();
 
-	        //seems it's important !! Remember to close it always
+	        //It's important !! Remember to close it always
 			delete lb;
-			delete serviceListener;
+			delete sl;
 			delete ml;
             if (_stop || MultiThread::isThreadError()) {
                 break;

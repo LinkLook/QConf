@@ -1,9 +1,12 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <fstream>
 #include <cstdio>
 #include "Config.h"
+#include "Log.h"
 #include "Util.h"
 using namespace std;
 
@@ -48,9 +51,25 @@ vector<string> Util::split(const string& str, const char separator){
 	return res;
 }
 
+int Util::writePid(const char* fileName) {
+	int fd;
+	if ((fd = open(fileName, O_WRONLY|O_TRUNC|O_CREAT, 0600)) == -1) {
+		LOG(LOG_ERROR, "open pid file failed. %s", fileName);
+		return -1;
+	}
+    char pidBuf[64] = {0};
+    snprintf(pidBuf, sizeof(pidBuf), "%d", getpid());
+	if (write(fd, pidBuf, sizeof(pidBuf)) < 0) {
+		LOG(LOG_ERROR, "write pid file failed. %s", fileName);
+		return -1;
+	}
+	close (fd);
+	return 0;
+}
+
 int Util::writeToFile(const string content, const string fileName) {
 	ofstream file;
-	//todo what to do if failed. And maybe I can learn to use the exception in cpp
+	//todo what to do if failed.
 	file.open(fileName);
 	file << content << endl;
 	file.close();
@@ -74,4 +93,12 @@ int Util::printServiceMap() {
 	Config* conf = Config::getInstance();
 	conf->printMap();
     return 0;
+}
+
+string Util::chooseZkHostRandom() {
+	string zkHost = (Config::getInstance())->getZkHost();
+	vector<string> hosts = split(zkHost, ',');
+	srandom(time(0));
+	int i = random() % hosts.size();
+	return hosts[i];
 }

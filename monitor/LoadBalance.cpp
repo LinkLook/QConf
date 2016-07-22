@@ -45,12 +45,11 @@ int LoadBalance::destroyEnv() {
 }
 
 LoadBalance::LoadBalance() : zh(NULL) {
+	md5ToServiceFatherLock = SPINLOCK_INITIALIZER;
 	conf = Config::getInstance();
 	md5ToServiceFather.clear();
 	monitors.clear();
 	myServiceFather.clear();
-	initEnv();
-	md5ToServiceFatherLock = SPINLOCK_INITIALIZER;
 }
 
 LoadBalance::~LoadBalance(){
@@ -73,9 +72,8 @@ void LoadBalance::processChildEvent(zhandle_t* zhandle, const string path) {
 		setReBalance();
 	}
 	//serviceFather节点减少了，需要进行负载的重新均衡吗？还是只要把对应的服务接口删除就好了。
-	//或许在serviceListener里监听这个更好？可以知道哪个服务被删除了
 	//但是如果大量serviceFather被删除，会导致负载不均衡，又有必要进行rebalance
-	//目前先直接rebalance
+	//目前先直接rebalance，如何面对serviceFather数目的变化，的确是个问题
 	else if (path == md5Path) {
 		LOG(LOG_DEBUG, "the number of serviceFather has changed. Rebalance...");
 		setReBalance();
@@ -157,7 +155,7 @@ int LoadBalance::zkGetChildren(const string path, struct String_vector* children
         return M_ERR;
 	}
 	else {
-		LOG(LOG_ERROR, "parameter error. zhandle is NULL");
+		LOG(LOG_ERROR, "zoo_get_children. error: %s node:%s", zerror(ret), path.c_str());
 		return M_ERR;
 	}
 	return M_ERR;
@@ -168,7 +166,6 @@ int LoadBalance::zkGetNode(const char* md5Path, char* serviceFather, int* dataLe
 		LOG(LOG_ERROR, "zhandle is NULL");
 		return M_ERR;
 	}
-	//todo 下面其实就是一个zoo_get，但是原来的设计中有很多错误判断，我这里先都跳过吧.而且原设计中先用了exist，原因是想知道这个节点的数据有多长，需要多大的buf去存放？
     LOG(LOG_INFO, "md5Path: %s, serviceFather: %s, *dataLen: %d", md5Path, serviceFather, *dataLen);
 	int ret = zoo_get(zh, md5Path, 1, serviceFather, dataLen, NULL);
 	if (ret == ZOK) {
@@ -189,6 +186,7 @@ int LoadBalance::zkGetNode(const char* md5Path, char* serviceFather, int* dataLe
 int LoadBalance::getMd5ToServiceFather() {
 	string path = conf->getNodeList();
 	struct String_vector md5Node = {0};
+	//get all md5 node
 	int ret = zkGetChildren(path, &md5Node);
 	if (ret == M_ERR) {
 		return M_ERR;
@@ -196,13 +194,17 @@ int LoadBalance::getMd5ToServiceFather() {
 	for (int i = 0; i < md5Node.count; ++i) {
 		char serviceFather[256] = {0};
 		string md5Path = conf->getNodeList() + "/" + string(md5Node.data[i]);
-		//todo 根据ret的值加入异常
         int dataLen = sizeof(serviceFather);
+        //get the value of md5Node which is serviceFather
 		ret = zkGetNode(md5Path.c_str(), serviceFather, &dataLen);
+		if (ret == M_ERR) {
+			LOG(LOG_ERROR, "get value of node:%s failed", md5Path.c_str());
+			continue;
+		}
 		updateMd5ToServiceFather(string(md5Node.data[i]), string(serviceFather));
-		//md5ToServiceFather[string(md5Node.data[i])] = string(serviceFather);
 		LOG(LOG_INFO, "md5: %s, serviceFather: %s", md5Path.c_str(), serviceFather);
 	}
+	deallocate_String_vector(&md5Node);
 #ifdef DEBUGL
     for (auto it = md5ToServiceFather.begin(); it != md5ToServiceFather.end(); ++it) {
         cout << it->first << " " << it->second << endl;
@@ -216,6 +218,7 @@ int LoadBalance::getMonitors(bool flag /*=false*/) {
 	struct String_vector monitorNode = {0};
 	int ret = zkGetChildren(path, &monitorNode);
 	if (ret == M_ERR) {
+		LOG(LOG_ERROR, "get monitors failes. path:%s", path.c_str());
 		return M_ERR;
 	}
 	for (int i = 0; i < monitorNode.count; ++i) {
@@ -223,31 +226,31 @@ int LoadBalance::getMonitors(bool flag /*=false*/) {
 		monitors.insert(monitor);
 	}
 	LOG(LOG_INFO, "There are %d monitors, I am %s", monitors.size(), _zkLockBuf);
+	deallocate_String_vector(&monitorNode);
     return M_OK;
 }
 
 int LoadBalance::balance(bool flag /*=false*/) {
 	vector<string> md5Node;
+	spinlock_lock(&md5ToServiceFatherLock);
 	for (auto it = md5ToServiceFather.begin(); it != md5ToServiceFather.end(); ++it) {
 		md5Node.push_back(it->first);
 	}
+	spinlock_unlock(&md5ToServiceFatherLock);
 #ifdef DEBUG
 	cout << "LLL11111111111" << endl;
-    //md5节点值
     cout << "md5 node value:" << endl;
 	for (auto it = md5Node.begin(); it != md5Node.end(); ++it) {
 		cout << (*it) << endl;
 	}
 #endif
 	vector<unsigned int> sequence;
-	//actually we need a lock here
 	for (auto it = monitors.begin(); it != monitors.end(); ++it) {
-		int tmp = stoi((*it).substr((*it).size() - 10));
+		unsigned int tmp = stoi((*it).substr((*it).size() - 10));
 		sequence.push_back(tmp);
 	}
 #ifdef DEBUG
 	cout << "LLL222222222222" << endl;
-    //monitors的序列号
     cout << "sequence number of monitors registed:" << endl;
 	for (auto it = sequence.begin(); it != sequence.end(); ++it) {
 		cout << (*it) << endl;
@@ -256,7 +259,6 @@ int LoadBalance::balance(bool flag /*=false*/) {
 	sort(sequence.begin(), sequence.end());
 #ifdef DEBUG
 	cout << "LLL33333333333" << endl;
-    //排序之后monitors的序列号
     cout << "sorted sequence number of monitors registed:" << endl;
 	for (auto it = sequence.begin(); it != sequence.end(); ++it) {
 		cout << (*it) << endl;
@@ -277,12 +279,14 @@ int LoadBalance::balance(bool flag /*=false*/) {
         return M_ERR;
     }
 	for (size_t i = rank; i < md5Node.size(); i += monitors.size()) {
+		//maybe this lock is useless
+		spinlock_lock(&md5ToServiceFatherLock);
 		myServiceFather.push_back(md5ToServiceFather[md5Node[i]]);
+		spinlock_unlock(&md5ToServiceFatherLock);
+		LOG(LOG_INFO, "my service father:%s", myServiceFather.back().c_str());
 	}
-	LOG(LOG_INFO, "There are %d monitors, I am %s", monitors.size(), _zkLockBuf);
 #ifdef DEBUG
 	cout << "LLL44444444444" << endl;
-    //进行负载均衡后，分配到这个Monitors的serviceFather节点
     cout << "my service father:" << endl;
 	for (auto it = myServiceFather.begin(); it != myServiceFather.end(); ++it) {
 		cout << (*it) << endl;

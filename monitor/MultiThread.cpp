@@ -42,22 +42,21 @@ MultiThread* MultiThread::mlInstance = NULL;
 
 bool MultiThread::threadError = false;
 
-MultiThread* MultiThread::getInstance(Zk* zk_input) {
+MultiThread* MultiThread::getInstance() {
 	if (!mlInstance) {
-		mlInstance = new MultiThread(zk_input);
+		mlInstance = new MultiThread();
 	}
 	return mlInstance;
 }
 
-MultiThread* MultiThread::getInstance() {
-    return mlInstance;
-}
-
-MultiThread::MultiThread(Zk* zk_input) : zk(zk_input) {
+MultiThread::MultiThread() {
 	updateServiceLock = SPINLOCK_INITIALIZER;
 	waitingIndexLock = SPINLOCK_INITIALIZER;
 	hasThreadLock = SPINLOCK_INITIALIZER;
+    threadPosLock = SPINLOCK_INITIALIZER;
+    serviceFathersLock = SPINLOCK_INITIALIZER;
 	conf = Config::getInstance();
+	zk = Zk::getInstance();
 	sl = ServiceListener::getInstance();
     lb = LoadBalance::getInstance();
     serviceFathers = lb->getMyServiceFather();
@@ -82,7 +81,7 @@ void MultiThread::setThreadError() {
 void MultiThread::clearThreadError() {
 	threadError = false;
 }
-
+//travelsal all the service under the service father to judge weather it's only one service up
 bool MultiThread::isOnlyOneUp(string node) {
 	ServiceListener* sl = ServiceListener::getInstance();
 	bool ret = true;
@@ -107,7 +106,7 @@ bool MultiThread::isOnlyOneUp(string node) {
     }
 	return ret;
 }
-
+//judge with serviceFatherStatus
 bool MultiThread::isOnlyOneUp(string node, int val) {
 	ServiceListener* sl = ServiceListener::getInstance();
 	bool ret = true;
@@ -127,7 +126,7 @@ bool MultiThread::isOnlyOneUp(string node, int val) {
 	}
 	return ret;
 }
-//todo 
+
 int MultiThread::updateZk(string node, int val) {
 	string status = to_string(val);
 	return zk->setZnode(node, status);
@@ -144,6 +143,7 @@ void MultiThread::updateService() {
 #ifdef DEBUGM
     cout << "in update service thread" << endl;
 #endif
+    LOG(LOG_INFO, "in update service thread");
 	while (1) {
         if (_stop || LoadBalance::getReBalance() || isThreadError()) {
             break;
@@ -152,8 +152,7 @@ void MultiThread::updateService() {
 		if (updateServiceInfo.empty()) {
 			priority.clear();
 			spinlock_unlock(&updateServiceLock);
-			//why sleep? I think there is no nessarity
-			//usleep(1000);
+			usleep(1000);
 			continue;
 		}
 		spinlock_unlock(&updateServiceLock);
@@ -226,12 +225,12 @@ void MultiThread::updateService() {
 		else {
 			LOG(LOG_INFO, "should not come here");
 		}
-		//why sleep? 
-		//usleep(1000);
+		usleep(1000);
 	}
 #ifdef DEBUGM
     cout << "out update service" << endl;
 #endif
+    LOG(LOG_ERROR, "out update service");
     return;
 }
 
@@ -335,9 +334,16 @@ int MultiThread::tryConnect(string curServiceFather) {
 	map<string, ServiceItem> serviceMap = conf->getServiceMap();
 	unordered_map<string, unordered_set<string>> serviceFatherToIp = sl->getServiceFatherToIp();
 	unordered_set<string> ip = serviceFatherToIp[curServiceFather];
-#ifdef DEBUGM
+    int retryCount = conf->getConnRetryCount();
 	for (auto it = ip.begin(); it != ip.end(); ++it) {
 		string ipPort = curServiceFather + "/" + (*it);
+        /*
+        some service father don't have services and we add "" to serviceFatherToIp
+        so we need to judge weather It's a legal ipPort
+        */
+        if (serviceMap.find(ipPort) == serviceMap.end()) {
+            continue;
+        }
 		ServiceItem item = serviceMap[ipPort];
 		int oldStatus = item.getStatus();
 		//If the node is STATUS_UNKNOWN or STATUS_OFFLINE, we will ignore it
@@ -346,34 +352,43 @@ int MultiThread::tryConnect(string curServiceFather) {
 		}
 		struct in_addr addr;
         item.getAddr(&addr);
+        int curTryTimes = 1;
 		int timeout = item.getConnectTimeout() > 0 ? item.getConnectTimeout() : 3;
 		int res = isServiceExist(&addr, (char*)item.getHost().c_str(), item.getPort(), timeout, item.getStatus());
         int status = (res)? 0 : 2;
-		//todo 根据status进行分类。这里先打印出来
+        //If status is down. I will retry.
+        while (curTryTimes <= retryCount && status == STATUS_DOWN) {
+            LOG(LOG_ERROR, "can not connect to service:%s, current try times:%d, max try times:%d", ipPort.c_str(), curTryTimes, retryCount);
+            res = isServiceExist(&addr, (char*)item.getHost().c_str(), item.getPort(), timeout, item.getStatus());
+            ++curTryTimes;
+        }
+#ifdef DEBUGM
 		cout << "sssssssssssssssssssssssssssss" << endl;
 		cout << "ipPort: " << ipPort << " status: " << status << " oldstatus: " << oldStatus << endl;
+#endif
+		LOG(LOG_INFO, "|checkService| service:%s, old status:%d, new status:%d", ipPort.c_str(), oldStatus, status);
 		if (status != oldStatus) {
 			spinlock_lock(&updateServiceLock);
             priority.push_back(ipPort);
             updateServiceInfo[ipPort] = status;
-            cout << "priority size: " << priority.size() << " updateServiceInfo size: " << updateServiceInfo.size() << endl;
-			LOG(LOG_INFO, "|checkService| service %s new status %d", ipPort.c_str(), status);
-			spinlock_unlock(&updateServiceLock);
+            spinlock_unlock(&updateServiceLock);
 		}
 	}
-#endif
     return 0;
 }
 
 void MultiThread::checkService() {
 	pthread_t pthreadId = pthread_self();
+    spinlock_lock(&threadPosLock);
 	size_t pos = threadPos[pthreadId];
+    spinlock_unlock(&threadPosLock);
 	while (1) {
         if (_stop || LoadBalance::getReBalance() || isThreadError()) {
             break;
         }
-		//string curServiceFather = (lb->getMyServiceFather())[pos];
+        spinlock_lock(&serviceFathersLock);
 		string curServiceFather = serviceFathers[pos];
+        spinlock_unlock(&serviceFathersLock);
 #ifdef DEBUGM
 		cout << "check service thread " << pthreadId << " pos: " << pos << " current service father: " << curServiceFather << endl;
 #endif
@@ -386,7 +401,6 @@ void MultiThread::checkService() {
 		    setHasThread(pos, true);
         }
         sleep(2);
-		//if ()
 	}
     return;
 }
@@ -402,62 +416,56 @@ void* MultiThread::staticCheckService(void* args) {
 	ml->checkService();
     pthread_exit(0);
 }
-//TODO 主线程肯定是要考虑配置重载什么的这些事情的
+//TODO 完全没有考虑配置重载等为了运维方便的功能
 int MultiThread::runMainThread() {
-	int schedule = NOSCHEDULE;
 	//Are there any problem?
 	int res = pthread_create(&updateServiceThread, NULL, staticUpdateService, NULL);
 	if (res != 0) {
 		setThreadError();
 		LOG(LOG_ERROR, "create the update service thread error: %s", strerror(res));
 	}
-	//考虑如何分配检查线程，比如记录每个father有多少个服务，如果很多就分配两个线程等等。
+	//考虑如何分配检查线程，比如记录每个father有多少个服务，如果很多就分配两个线程？这个不好办
 	int oldThreadNum = 0;
 	int newThreadNum = 0;
-	//如果serviceFather数目小于最大线程数目，每个线程一个serviceFather
-	//如果serviceFather数目大于最大线程数目，这应该是更常见的，然后就要复用线程。同样的这里怎么复用，复用哪些线程有很多方法
-	//todo
+	//If the number of service father < MAX_THREAD_NUM, one service father one thread
+	//todo. Better way to reuse thread
 	while (1) {
 		unordered_map<string, unordered_set<string>> serviceFatherToIp = sl->getServiceFatherToIp();
         if (_stop || LoadBalance::getReBalance() || isThreadError()) {
             break;
         }
 		newThreadNum = serviceFatherToIp.size();
-		//线程需要开满，且需要调度.需要调度与否通过参数传一个flag进去
+		//线程需要开满，且需要调度.
 		if (newThreadNum > MAX_THREAD_NUM) {
 			newThreadNum = MAX_THREAD_NUM;
-			//todo 这个变量作为flag，只有主线程可以修改，但是所有的检查线程都要读它，这里是否需要加锁呢
-			//todo 我应该先改变schedule的值还是先创建新线程呢？
-			if (schedule == NOSCHEDULE) {
-				schedule = SCHEDULE;
-			}
 			for (; oldThreadNum < newThreadNum; ++oldThreadNum) {
-				res = pthread_create(checkServiceThread + oldThreadNum, NULL, staticCheckService, &schedule);
+                spinlock_lock(&threadPosLock);
+				res = pthread_create(checkServiceThread + oldThreadNum, NULL, staticCheckService, NULL);
 				if (res != 0) {
 					setThreadError();
 					LOG(LOG_ERROR, "create the check service thread error: %s", strerror(res));
 					break;
 				}
 				threadPos[checkServiceThread[oldThreadNum]] = oldThreadNum;
+                spinlock_unlock(&threadPosLock);
 			}
 		}
 		//线程不用开满，也不需要调度
 		else {
-			if (schedule == SCHEDULE) {
-				schedule = NOSCHEDULE;
-			}
 			if (newThreadNum <= oldThreadNum) {
 				//some thread may be left to be idle
 			}
 			else {
 				for (; oldThreadNum < newThreadNum; ++oldThreadNum) {
-					res = pthread_create(checkServiceThread + oldThreadNum, NULL, staticCheckService, &schedule);
+                    spinlock_lock(&threadPosLock);
+					res = pthread_create(checkServiceThread + oldThreadNum, NULL, staticCheckService, NULL);
 					if (res != 0) {
 						setThreadError();
 						LOG(LOG_ERROR, "create the check service thread error: %s", strerror(res));
 						break;
 					}
 					threadPos[checkServiceThread[oldThreadNum]] = oldThreadNum;
+                    spinlock_unlock(&threadPosLock);
 #ifdef DEBUGM
                     cout << "checkServiceThread[" << oldThreadNum << "] " << checkServiceThread[oldThreadNum] << endl;
 #endif
