@@ -75,14 +75,7 @@ void ServiceListener::modifyServiceFatherToIp(const string op, const string& pat
 	size_t pos2 = ipPort.rfind(':');
 	string ip = ipPort.substr(0, pos2);
 	string port = ipPort.substr(pos2 + 1);
-    //一个很诡异的错误，如果我把下面的代码放在这里，就会导致子进程不断死亡
-    /*
-    int status = STATUS_UNKNOWN;
-    char data[16] = {0};
-    int dataLen = 16;
-    int ret = zoo_get(zh, path.c_str(), 1, data, &dataLen, NULL);
-    status = atoi(data);
-    */
+
 	if (op == ADD) {
 		//If this ipPort has exist, no need to do anything
 		if (ipExist(serviceFather, ipPort)) {
@@ -104,7 +97,6 @@ void ServiceListener::modifyServiceFatherToIp(const string op, const string& pat
             return;
         }
         status = atoi(data);
-		//这里好像还少几个成员没有设置 connRetry和connTimeout
         ServiceItem item;
         item.setServiceFather(serviceFather);
         item.setStatus(status);
@@ -116,24 +108,7 @@ void ServiceListener::modifyServiceFatherToIp(const string op, const string& pat
 
 		conf->deleteService(path);
 		conf->addService(path, item);
-		//actually serviceFather sure should exist. no need to discuss
-		/*
-		if (!serviceFatherExist(serviceFather)) {
-			spinlock_lock(&serviceFatherToIpLock);
-			serviceFatherToIp.insert(make_pair(serviceFather, unordered_set<string> ()));
-            serviceFatherToIp[serviceFather].insert(ipPort);
-            spinlock_unlock(&serviceFatherToIpLock);
 
-            modifyServiceFatherStatus(serviceFather, status, 1);
-		}
-		else {
-            auto it = serviceFatherToIp.find(serviceFather);
-            if ((it->second).find(ipPort) == (it->second).end()) {
-                serviceFatherToIp[serviceFather].insert(ipPort);
-                //modify the serviceFatherStatus.serviceFatherStatus changed too
-                modifyServiceFatherStatus(serviceFather, status, 1);
-            }
-		}*/
         addIpPort(serviceFather, ipPort);
         modifyServiceFatherStatus(serviceFather, status, 1);
 	}
@@ -186,7 +161,7 @@ void ServiceListener::modifyServiceFatherToIp(const string op, const string& pat
 }
 
 void ServiceListener::processDeleteEvent(zhandle_t* zhandle, const string& path) {
-	//It must be a service node. Because I do zoo_get only in service node
+	//It must be a service node. Because I do zoo_get() only in service node
 	//update serviceFatherToIp
 	ServiceListener* sl = ServiceListener::getInstance();
 	sl->modifyServiceFatherToIp(DELETE, path);
@@ -203,7 +178,6 @@ void ServiceListener::processChildEvent(zhandle_t* zhandle, const string& path) 
 			LOG(LOG_INFO, "actually It's a delete event");
 		}
 		else {
-			//感觉很低效，可是新建了一个节点，好像只能把所有子节点都获取来，重新加一遍
 			LOG(LOG_INFO, "add new service");
 			for (int i = 0; i < children.count; ++i) {
 				string ipPort = string(children.data[i]);
@@ -214,8 +188,6 @@ void ServiceListener::processChildEvent(zhandle_t* zhandle, const string& path) 
 	}
 	else if (ret == ZNONODE) {
 		LOG(LOG_TRACE, "%s...out...node:%s not exist.", __FUNCTION__, path.c_str());
-		//这个serviceFather不存在了，可能是删除了，这个事件由readBalance完成，也许这里也应该做点什么
-		//serviceFatherToIp.erase(path);
         return;
 	}
 	else {
@@ -225,14 +197,20 @@ void ServiceListener::processChildEvent(zhandle_t* zhandle, const string& path) 
 }
 
 void ServiceListener::processChangedEvent(zhandle_t* zhandle, const string& path) {
-	//ServiceListener* sl = ServiceListener::getInstance();
 	Config* conf = Config::getInstance();
-	//int oldStatus = (conf->getServiceItem(path)).getStatus();
-
+#ifdef DEBUGM
+    time_t curTime;
+    time(&curTime);
+    struct tm* realTime = localtime(&curTime);
+    cout << "ccccc1: " << path << " " << realTime->tm_min << " " << realTime->tm_sec << endl;
+#endif
 	int newStatus = STATUS_UNKNOWN;
 	char data[16] = {0};
 	int dataLen = 16;
 	int ret = zoo_get(zhandle, path.c_str(), 1, data, &dataLen, NULL);
+#ifdef DEBUGM
+    cout << "ccccc2: " << path << " " << realTime->tm_min << " " << realTime->tm_sec << endl;
+#endif
     if (ret == ZOK) {
         LOG(LOG_INFO, "get node:%s success", __FUNCTION__, path.c_str());
     }
@@ -245,19 +223,13 @@ void ServiceListener::processChangedEvent(zhandle_t* zhandle, const string& path
         return;
     }
 	newStatus = atoi(data);
-	/*
-    size_t pos = path.rfind('/');
-    string serviceFather = path.substr(0, pos);
-    if (sl->getWatchFlag()) {
-        sl->clearWatchFlag();
-    }
-    else {
-	    sl->modifyServiceFatherStatus(serviceFather, oldStatus, -1);
-	    sl->modifyServiceFatherStatus(serviceFather, newStatus, 1);
-    }
-    */
 	//update serviceMap
     conf->setServiceMap(path, newStatus);
+#ifdef DEBUGM
+    cout << "ccccc3: " << path << " " << realTime->tm_min << " " << realTime->tm_sec << endl;
+    cout << "ccccc4: new status: " << newStatus << endl;
+    cout << "ccccc4: status: " << (conf->getServiceItem(path)).getStatus() << endl;
+#endif
 }
 
 void ServiceListener::watcher(zhandle_t* zhandle, int type, int state, const char* path, void* context) {
@@ -520,7 +492,6 @@ bool ServiceListener::serviceFatherExist(const string& serviceFather) {
 	return ret;
 }
 
-//要增加健壮性也应该在这里增加
 void ServiceListener::addIpPort(const string& serviceFather, const string& ipPort) {
 	spinlock_lock(&serviceFatherToIpLock);
 	serviceFatherToIp[serviceFather].insert(ipPort);
@@ -534,9 +505,6 @@ void ServiceListener::deleteIpPort(const string& serviceFather, const string& ip
 }
 
 
-//这个标记一开始是用来区分zk节点的值是由monitor去改变的还是zk自己改变的
-//是为了使用serviceFatherStatus来判断是否仅剩一个up的服务节点的
-//最后发现这样还是不可行，因为网络的原因等，还是无法确认每次设置了标记位之后就清楚，在设置，暂时无用
 void ServiceListener::setWatchFlag() {
     spinlock_lock(&watchFlagLock);
     watchFlag = true;

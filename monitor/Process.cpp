@@ -1,6 +1,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -12,11 +13,27 @@
 #include <fcntl.h>
 #include "Process.h"
 #include "Log.h"
+#include "ConstDef.h"
 #include "Util.h"
+#include "ServiceItem.h"
+#include "Config.h"
+#include "ServiceListener.h"
 
 using namespace std;
-//weather process is stopped
-bool _stop = false;
+
+bool Process::stop = false;
+
+bool Process::isStop() {
+    return stop;
+}
+
+void Process::setStop() {
+    stop = true;
+}
+
+void Process::clearStop() {
+    stop = false;
+}
 
 bool Process::isProcessRunning(const string& processName) {
 	FILE* ptr = NULL;
@@ -47,8 +64,8 @@ int Process::daemonize() {
     signal(SIGTSTP, SIG_IGN);
     signal(SIGHUP, SIG_IGN);
 
-#ifdef REALSE
-    int fd, dtablesize;
+#ifdef CLOSEFD
+    int fd;
 #endif
     pid_t pid;
     //already a daemon
@@ -81,14 +98,16 @@ int Process::daemonize() {
     	exit(EXIT_FAILURE);
     }*/
     //here close all the file description and redirect stand IO
-#ifdef REALSE
+#ifdef CLOSEFD
     fd = open("/dev/null", O_RDWR, 0);
     dup2(fd, STDIN_FILENO);
     dup2(fd, STDOUT_FILENO);
     dup2(fd, STDERR_FILENO);
-    dtablesize = getdtablesize();
-    for (fd = 3; fd < dtablesize; ++fd) {
-    	close(fd);
+    if (fd >= 3) {
+        close(fd);
+    }
+    for (fd = sysconf(_SC_OPEN_MAX); fd >= 3; --fd) {
+        close(fd);
     }
 #endif
     umask(0);
@@ -100,6 +119,185 @@ void Process::sigForward(const int sig) {
     kill(0, sig);
 }
 
+void Process::processParam(const string& op) {
+    ofstream fout;
+    fout.open(STATUS_LIST_FILE, ofstream::out);
+    if (!fout.good()) {
+        LOG(LOG_ERROR, "file open failed, path: %s", STATUS_LIST_FILE.c_str());
+        return;
+    }
+    int status;
+    int upCount = 0;
+    int offlineCount = 0;
+    int downCount = 0;
+    int unknownCount = 0;
+    int allCount = 0;
+    string service;
+    string stat;
+    ServiceItem item;
+    string node;
+    map<string, ServiceItem> serviceMap = Config::getInstance()->getServiceMap();
+
+    //list node
+    if (op != UP && op != DOWN && op != OFFLINE && op != ALL) {
+        unordered_set<string> ips = (ServiceListener::getInstance()->getServiceFatherToIp())[op];
+        if (ips.empty()) {
+            LOG(LOG_ERROR, "node: %s doesn't exist.", op.c_str());
+            return;
+        }
+        //find and output
+        allCount = ips.size();
+        for (int i = 0; i < LINE_LENGTH; ++i) {
+            fout << "-";
+        }
+        fout << endl;
+        fout << setiosflags(ios::left) << setw(10) << "status" << setiosflags(ios::left) \
+        << setw(30) << "service" << setiosflags(ios::left) << "node" << endl;
+        for (auto it = ips.begin(); it != ips.end(); ++it) {
+            string ipPort;
+            if (op.back() == '/') {
+                ipPort = op + (*it);
+            }
+            else {
+                ipPort = op + "/" + (*it);
+            }
+            item = serviceMap[ipPort];
+            status = item.getStatus();
+            if (status == STATUS_UP) {
+                ++upCount;
+                stat = "up";
+            }
+            else if (status == STATUS_DOWN) {
+                ++downCount;
+                stat = "down";
+            }
+            else if (status == STATUS_OFFLINE) {
+                ++offlineCount;
+                stat = "offline";
+            }
+            else {
+                ++unknownCount;
+                stat = "unknown";
+            }
+            for (int i = 0; i < LINE_LENGTH; ++i) {
+                fout << "-";
+            }
+            fout << endl;
+            fout << setw(10) << stat << setw(30) << (*it) << op <<  endl;
+        }
+        for (int i = 0; i < LINE_LENGTH; ++i) {
+            fout << "-";
+        }
+        fout << endl;
+        fout <<"Up:" << upCount << "    Offline:" << offlineCount << "    Down:" \
+        << downCount << "    Unknown:" << unknownCount << "    Total:" << allCount << endl;
+        return;
+    }
+    for (int i = 0; i < LINE_LENGTH; ++i) {
+        fout << "-";
+    }
+    fout << endl;
+    fout << setiosflags(ios::left) << setw(10) << "status" << setiosflags(ios::left) \
+    << setw(30) << "service" << setiosflags(ios::left) << "node" << endl;
+    allCount = serviceMap.size();
+    for (auto it = serviceMap.begin(); it != serviceMap.end(); ++it) {
+        item = it->second;
+        status = item.getStatus();
+        node = item.getServiceFather();
+        service = item.getHost() + ":" + to_string(item.getPort());
+        if (status == STATUS_UP) {
+            stat = "up";
+            if (op == UP || op == ALL) {
+                for (int i = 0; i < LINE_LENGTH; ++i) {
+                    fout << "-";
+                }
+                fout << endl;
+                fout << setw(10) << stat << setw(30) << service << node << endl;
+            }
+            ++upCount;
+        }
+        else if (status == STATUS_DOWN) {
+            stat = "down";
+            if (op == DOWN || op == ALL) {
+                for (int i = 0; i < LINE_LENGTH; ++i) {
+                    fout << "-";
+                }
+                fout << endl;
+                fout << setw(10) << stat << setw(30) << service << node << endl;
+            }
+            ++downCount;
+        }
+        else if (status == STATUS_OFFLINE) {
+            stat = "offline";
+            if (op == OFFLINE || op == ALL) {
+                for (int i = 0; i < LINE_LENGTH; ++i) {
+                    fout << "-";
+                }
+                fout << endl;
+                fout << setw(10) << stat << setw(30) << service << node << endl;
+            }
+            ++offlineCount;
+        }
+        else {
+            stat = "unknown";
+            if (op == ALL) {
+                for (int i = 0; i < LINE_LENGTH; ++i) {
+                    fout << "-";
+                }
+                fout << endl;
+                fout << setw(10) << stat << setw(30) << service << node << endl;
+            }
+            ++unknownCount;
+        }
+    }
+    if (op == UP) {
+        for (int i = 0; i < LINE_LENGTH; ++i) {
+            fout << "-";
+        }
+        fout << endl;
+        fout <<"Up Service:" << upCount << endl;
+    }
+    if (op == DOWN) {
+        for (int i = 0; i < LINE_LENGTH; ++i) {
+            fout << "-";
+        }
+        fout << endl;
+        fout <<"Down Service:" << downCount << endl;
+    }
+    if (op == OFFLINE) {
+        for (int i = 0; i < LINE_LENGTH; ++i) {
+            fout << "-";
+        }
+        fout << endl;
+        fout <<"Offline Service:" << offlineCount << endl;
+    }
+    if (op == ALL) {
+        for (int i = 0; i < LINE_LENGTH; ++i) {
+            fout << "-";
+        }
+        fout << endl;
+        fout <<"Up:" << upCount << "    Offline:" << offlineCount << "    Down:" \
+        << downCount << "    Unknown:" << unknownCount << "    Total:" << allCount << endl;       
+    }
+    fout.close();
+    return;
+}
+
+void Process::handleCmd(vector<string>& cmd) {
+    if (cmd[0] == CMD_RELOAD) {
+        //handle reload
+    }
+    else if (cmd[0] == CMD_LIST) {
+        if (cmd.size() == 1) {
+            cmd.push_back("all");
+        }
+        processParam(cmd[1]);
+    }
+    else {
+        LOG(LOG_ERROR, "handleCmd error: unknown cmd(%s)", cmd[0].c_str());
+    }
+}
+
 int Process::processFileMsg(const string cmdFile) {
     LOG(LOG_TRACE, "processFileMsg...in...");
     ifstream file;
@@ -109,12 +307,11 @@ int Process::processFileMsg(const string cmdFile) {
         while (!file.eof()) {
             getline(file, line);
             Util::trim(line);
-            //根据脚本发现它使用冒号进行分隔的
             vector<string> cmdExplain = Util::split(line, ':');
             if (cmdExplain.size() <= 0 || cmdExplain.size() > 2) {
                 continue;
             }
-            //todo process the cmd
+            handleCmd(cmdExplain);
         }
     }
     else {
@@ -129,11 +326,11 @@ void Process::sigHandler(const int sig) {
     switch (sig) {
         case SIGTERM:
             LOG(LOG_INFO, "Receive signal SIGTERM");
-            _stop = true;
+            setStop();
             break;
         case SIGKILL:
             LOG(LOG_INFO, "Receive signal SIGKILL");
-            _stop = true;
+            setStop();
             break;
         case SIGINT:
             LOG(LOG_INFO, "Receive signal SIGINT");
@@ -144,7 +341,7 @@ void Process::sigHandler(const int sig) {
             break;
         case SIGUSR2:
             LOG(LOG_INFO, "Receive signal SIGUSR2");
-            _stop = true;
+            setStop();
             break;
         default:
             break;
@@ -159,7 +356,6 @@ int Process::processKeepalive(int& childExitStatus, const string pidFile) {
     while (1) {
         while (processNum < 1) {
             childPid = fork();
-            cout << "new child " << childPid << endl;
             if (childPid < 0) {
                 LOG(LOG_FATAL_ERROR, "fork excute failed");
                 return -1;
@@ -206,18 +402,16 @@ int Process::processKeepalive(int& childExitStatus, const string pidFile) {
                 unlink(pidFile.c_str());
             }
 
-            //正常退出。但到底怎么定义正常退出？
             if (WIFEXITED(exitStatus)) {
                 LOG(LOG_INFO, "worker process PID = %d exited normally with exit-code = %d (it used %ld kBytes max",
                     childPid, WEXITSTATUS(exitStatus), resourceUsage.ru_maxrss / 1024);
                 childExitStatus = WEXITSTATUS(exitStatus);
                 return 1;
             }
-            //因为收到信号退出，比如用户kill了这个进程，那么父进程应该会自动再启动它
             else if (WIFSIGNALED(exitStatus)) {
                 LOG(LOG_INFO, "worker process PID = %d died on signal = %d (it used %ld kBytes max) ",
                     childPid, WTERMSIG(exitStatus), resourceUsage.ru_maxrss / 1024);
-                int timeToWait = 2;
+                int timeToWait = 16;
                 while (timeToWait > 0) {
                     timeToWait = sleep(timeToWait);
                 }
@@ -231,13 +425,13 @@ int Process::processKeepalive(int& childExitStatus, const string pidFile) {
                 LOG(LOG_INFO, "child process is stopped and should restart later");
                 --processNum;
                 childPid = -1;
-                sleep(2);
+                sleep(16);
             }
             else {
                 LOG(LOG_ERROR, "Can't get here!");
                 --processNum;
                 childPid = -1;
-                sleep(2);
+                sleep(16);
             }
         }
         else if (exitPid == -1) {

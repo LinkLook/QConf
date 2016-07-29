@@ -46,14 +46,14 @@ const string LOCK_ROOT_DIR = "/qconf_monitor_lock_node";
 const string DEFAULT_INSTANCE_NAME = "default_instance";
 const string MONITOR_LIST = "monitor_list";
 const string SLASH = "/";
-// I think it's better to call it MD5_LIST
+
 const string NODE_LIST = "md5_list";
 
 //multi thread
-#ifdef DEBUGM
-constexpr int MAX_THREAD_NUM = 5;
+#ifdef DEBUGT
+constexpr int MAX_THREAD_NUM = 1;
 #else
-constexpr int MAX_THREAD_NUM = 128;
+constexpr int MAX_THREAD_NUM = 256;
 #endif
 /*
 constexpr int SCHEDULE = 1;
@@ -63,5 +63,15 @@ constexpr int NOSCHEDULE = 0;
 const string DELETE = "delete";
 const string ADD = "add";
 const string CLEAR = "clear";
+
+//command to process
+const string CMD_RELOAD = "reload";
+const string CMD_LIST = "list";
+const string STATUS_LIST_FILE = "tmp/list";
+const string ALL = "all";
+const string UP = "up";
+const string DOWN = "down";
+const string OFFLINE = "offline";
+const int LINE_LENGTH = 100;
 
 #endif

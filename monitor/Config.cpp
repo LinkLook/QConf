@@ -106,7 +106,6 @@ int Config::setValueStr(const string& key, const string& value){
 	return 0;
 }
 
-//这里面的serviceItem是什么用的
 int Config::load(){
 	ifstream file;
 	file.open(confPath);
@@ -212,11 +211,8 @@ int Config::printMap() {
 			continue;
 		}
 #endif
-		cout << it->first << endl;
-		cout << "host: " << (it->second).getHost() << endl;
-		cout << "port: " << (it->second).getPort() << endl;
-		cout << "service father: " << (it->second).getServiceFather() << endl;
-		cout << "status: " << (it->second).getStatus() << endl;
+		LOG(LOG_INFO, "path:%s, host:%s, port:%d, serviceFather:%s, status:%d", (it->first).c_str(), \
+        (it->second).getHost().c_str(), (it->second).getPort(), (it->second).getServiceFather().c_str(), (it->second).getStatus());
 	}
     return 0;
 }
@@ -244,7 +240,6 @@ map<string, ServiceItem> Config::getServiceMap() {
 }
 
 int Config::setServiceMap(string node, int val) {
-	//todo 同样缺异常判断，比如找不到怎么办啊什么的
 	spinlock_lock(&serviceMapLock);
 	_serviceMap[node].setStatus(val);
 	spinlock_unlock(&serviceMapLock);

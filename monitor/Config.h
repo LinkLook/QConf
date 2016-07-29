@@ -49,7 +49,7 @@ public:
 	string getZkHost();
 	string getZkLogPath();
 	int getZkRecvTimeout();
-	//todo maybe should return const string
+
 	string getNodeList();
 	string getMonitorList();
 
@@ -61,7 +61,7 @@ public:
 	void deleteService(const string& ipPath);
 
     ServiceItem getServiceItem(const string& ipPath);
-	//put this method to class Util may be better
+
 	int printMap();
 };
 #endif

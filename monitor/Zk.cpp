@@ -9,12 +9,11 @@
 #include "ConstDef.h"
 #include "Config.h"
 #include "Util.h"
+#include "Process.h"
 #include "Log.h"
 #include "Zk.h"
 using namespace std;
 
-extern bool _stop;
-//临时解决方案，把_zkLockBuf作为非静态全局变量，使得它对所有文件可见,这里面保存的是注册的monitor的名字
 char _zkLockBuf[512] = {0};
 
 Zk* Zk::zk = NULL;
@@ -35,7 +34,7 @@ void Zk::processDeleteEvent(zhandle_t* zhandle, const string& path) {
 	}
 	if (path == conf->getMonitorList()) {
 		LOG(LOG_INFO, "monitor dir %s is removed. Restart main loop", path.c_str());
-        _stop = true;
+        Process::setStop();
 	}
 }
 
@@ -53,7 +52,6 @@ void Zk::watcher(zhandle_t* zhandle, int type, int state, const char* node, void
 				LOG(LOG_DEBUG, "[session state: ZOO_EXPIRED_STATA: %d]", state);
 				//todo 是否需要watchSession？
 				LOG(LOG_INFO, "restart the main loop!");
-				//直接设置_stop其实是一样的效果
 				kill(getpid(), SIGUSR2);
 			}
 			else {
@@ -147,17 +145,11 @@ void Zk::zErrorHandler(const int& ret) {
         ret == ZINVALIDSTATE)     /*!< Invliad zhandle state */
     {   
         LOG(LOG_ERROR, "API return: %s. Reinitialize zookeeper handle.", zerror(ret));
-        //todo maybe could add some code to make it robuster
-    	//destoryEnv();
-      	//initEnv(_zkHost, _zkLogPath, _recvTimeout);
     }
     else if (ret == ZCLOSING ||    /*!< ZooKeeper is closing */
             ret == ZCONNECTIONLOSS)  /*!< Connection to the server has been lost */
     {   
         LOG(LOG_FATAL_ERROR, "connect to zookeeper Failed!. API return : %s. Try to initialize zookeeper handle", zerror(ret));
-    	//todo
-    	//destoryEnv();
-    	//initEnv(_zkHost, _zkLogPath, _recvTimeout);
     }  
 }
 
@@ -167,7 +159,7 @@ bool Zk::znodeExist(const string& path) {
 		return false;
 	}
 	struct Stat stat;
-	int ret = zoo_exists(_zh, path.c_str(), 0, &stat);
+	int ret = zoo_exists(_zh, path.c_str(), 1, &stat);
 	if (ret == ZOK) {
 		LOG(LOG_INFO, "node exist. node: %s", path.c_str());
 		return true;
@@ -279,7 +271,7 @@ int Zk::setZnode(string node, string data) {
 	int ver = -1; //will not check the version of node
 	if (!_zh) {
 		LOG(LOG_FATAL_ERROR, "_zh is NULL. restart the main loop!");
-		_stop = true;
+        Process::setStop();
 		return -1;
 	}
 	int status = zoo_set(_zh, node.c_str(), data.c_str(), data.length(), ver);

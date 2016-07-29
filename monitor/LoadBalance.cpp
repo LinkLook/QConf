@@ -10,13 +10,13 @@
 #include "ConstDef.h"
 #include "Util.h"
 #include "Log.h"
+#include "Process.h"
 #include "LoadBalance.h"
 #include "Config.h"
 #include "x86_spinlocks.h"
 #include "Zk.h"
 
 using namespace std;
-extern bool _stop;
 extern char _zkLockBuf[512];
 
 bool LoadBalance::reBalance = false;
@@ -71,9 +71,6 @@ void LoadBalance::processChildEvent(zhandle_t* zhandle, const string path) {
 		LOG(LOG_INFO, "the number of monitors has changed. Rebalance...");
 		setReBalance();
 	}
-	//serviceFather节点减少了，需要进行负载的重新均衡吗？还是只要把对应的服务接口删除就好了。
-	//但是如果大量serviceFather被删除，会导致负载不均衡，又有必要进行rebalance
-	//目前先直接rebalance，如何面对serviceFather数目的变化，的确是个问题
 	else if (path == md5Path) {
 		LOG(LOG_DEBUG, "the number of serviceFather has changed. Rebalance...");
 		setReBalance();
@@ -135,7 +132,6 @@ void LoadBalance::watcher(zhandle_t* zhandle, int type, int state, const char* p
         case CHANGED_EVENT_DEF:
             LOG(LOG_INFO, "zookeeper watcher [ change event ] path:%s", path);
             processChangedEvent(zhandle, string(path));
-            //todo 意味着md5对应的serviceFather改变了。这也太奇怪了，难道是serviceFather的名字改变了？
             break;
 	}
 }
@@ -266,7 +262,6 @@ int LoadBalance::balance(bool flag /*=false*/) {
 #endif
 	string monitor = string(_zkLockBuf);
 	unsigned int mySeq = stoi(monitor.substr(monitor.size() - 10));
-    //It's ok to use size_t. But it may have error when it's negative
     size_t rank = 0;
 	for (; rank < sequence.size(); ++rank) {
 		if (sequence[rank] == mySeq) {
@@ -275,7 +270,7 @@ int LoadBalance::balance(bool flag /*=false*/) {
 	}
     if (rank == sequence.size()) {
         LOG(LOG_INFO, "I'm connect to zk. But the monitor registed is removed. Restart main loop");
-        _stop = true;
+        Process::setStop();
         return M_ERR;
     }
 	for (size_t i = rank; i < md5Node.size(); i += monitors.size()) {

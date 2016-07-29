@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <cstdio>
+#include <vector>
 #include "ConstDef.h"
 using namespace std;
 
@@ -10,6 +11,9 @@ class Process{
 private:
 	Process();
 	~Process();
+	//if _zk disconnect with server. _stop will be true and main loop will be reiterate
+    static bool stop;
+    static void handleCmd(vector<string>& cmd);
 
 public:
 	static bool isProcessRunning(const string& processName);
@@ -18,5 +22,9 @@ public:
 	static void sigForward(const int sig);
 	static void sigHandler(const int sig);
 	static int processFileMsg(const string cmdFile);
+	static void processParam(const string& op);
+    static bool isStop();
+    static void setStop();
+    static void clearStop();
 };
 #endif

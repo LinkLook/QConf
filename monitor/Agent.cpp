@@ -17,13 +17,11 @@
 #include "MultiThread.h"
 using namespace std;
 static Zk* _zk = NULL;
-//if _zk disconnect with server. _stop will be true and main loop will be reiterate
-extern bool _stop;
 
 int main(int argc, char** argv){
 	Config* conf = Config::getInstance();
 	Util::printConfig();
-#ifdef REALSE
+#ifdef RELEASE
 	if (Process::isProcessRunning(MONITOR_PROCESS_NAME)) {
 		LOG(LOG_ERROR, "Monitor is already running.");
 		return -1;
@@ -52,9 +50,8 @@ int main(int argc, char** argv){
     //maybe we need it to make the child process wait a while
     //sleep(2);
 	while (1) {
-        cout << "mainloop start" << endl;
 		LOG(LOG_INFO, " main loop start -> !!!!!!");
-		_stop = false;
+        Process::clearStop();
 		conf->clearServiceMap();
         if (!_zk) {
             dp();
@@ -108,8 +105,6 @@ int main(int argc, char** argv){
 		// monitor register, this function should in LoadBalance
 		if (_zk->registerMonitor(conf->getMonitorList() + "/monitor_") == M_OK) {
 			LOG(LOG_INFO, "Monitor register success");
-			//wait other monitor to register
-			//sleep(3);
 		}
 		else {
 			LOG(LOG_ERROR, "Monitor register failed");
@@ -124,6 +119,9 @@ int main(int argc, char** argv){
 		If rebalance is needed, the loop will be reiterate
 		*/
 		while (1) {
+            if (Process::isStop() || MultiThread::isThreadError()) {
+                break;
+            }
 			LOG(LOG_INFO, " second loop start -> !!!!!!");
 			LoadBalance::clearReBalance();
 			//load balance
@@ -143,10 +141,6 @@ int main(int argc, char** argv){
 			}
 			else {
 				LOG(LOG_ERROR, "get md5 to service father failed");
-				/*
-				how to deal with this in a better way?
-				if the reason of failure is node not exist, we should restart main loop
-				*/
 				delete lb;
 				sleep(2);
 				continue;
@@ -195,7 +189,7 @@ int main(int argc, char** argv){
 			delete lb;
 			delete sl;
 			delete ml;
-            if (_stop || MultiThread::isThreadError()) {
+            if (Process::isStop() || MultiThread::isThreadError()) {
                 break;
             }
 		}
