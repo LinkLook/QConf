@@ -7,12 +7,12 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <pthread.h>
 #include <zookeeper.h>
 #include <zk_adaptor.h>
 #include "Config.h"
 #include "ServiceItem.h"
 #include "LoadBalance.h"
-#include "x86_spinlocks.h"
 using namespace std;
 
 class ServiceListener {
@@ -41,9 +41,10 @@ public:
     int zkGetChildren(const string path, struct String_vector* children);
     size_t getIpNum(const string& serviceFather);
 
-    spinlock_t serviceFatherToIpLock;
-    spinlock_t serviceFatherStatusLock;
-    spinlock_t watchFlagLock;
+    //spinlock_t serviceFatherToIpLock;
+    pthread_mutex_t serviceFatherToIpLock;
+    pthread_mutex_t serviceFatherStatusLock;
+    pthread_mutex_t watchFlagLock;
     
     bool watchFlag;
 

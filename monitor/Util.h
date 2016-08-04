@@ -2,7 +2,6 @@
 #define UTIL_H
 #include <string>
 #include <vector>
-//#include "Config.h"
 using namespace std;
 
 class Util{
@@ -17,6 +16,5 @@ public:
 	static int writePid(const char* fileName);
 	static int writeToFile(const string content, const string file);
 	static int printServiceMap();
-	static string chooseZkHostRandom();
 };
 #endif

@@ -77,14 +77,14 @@ int Util::writeToFile(const string content, const string fileName) {
 }
 
 int Util::printConfig(){
-	LOG(LOG_INFO, "daemonMode:%d", (Config::getInstance())->isDaemonMode());
-	LOG(LOG_INFO, "autoStart:%d", (Config::getInstance())->isAutoStart());
-	LOG(LOG_INFO, "logLevel:%d", (Config::getInstance())->getLogLevel());
-	LOG(LOG_INFO, "connRetryCount:%d", (Config::getInstance())->getConnRetryCount());
-	LOG(LOG_INFO, "scanInterval:%d", (Config::getInstance())->getScanInterval());
-	LOG(LOG_INFO, "instanceName:%s", ((Config::getInstance())->getInstanceName()).c_str());
-	LOG(LOG_INFO, "zkHost:%s", ((Config::getInstance())->getZkHost()).c_str());
-	LOG(LOG_INFO, "zkLogPath:%s", ((Config::getInstance())->getZkLogPath()).c_str());
+	LOG(LOG_INFO, "daemonMode: %d", Config::getInstance()->isDaemonMode());
+	LOG(LOG_INFO, "autoStart: %d", Config::getInstance()->isAutoStart());
+	LOG(LOG_INFO, "logLevel: %d", Config::getInstance()->getLogLevel());
+	LOG(LOG_INFO, "connRetryCount: %d", Config::getInstance()->getConnRetryCount());
+	LOG(LOG_INFO, "scanInterval: %d", Config::getInstance()->getScanInterval());
+	LOG(LOG_INFO, "instanceName: %s", (Config::getInstance()->getInstanceName()).c_str());
+	LOG(LOG_INFO, "zkHost: %s", (Config::getInstance()->getZkHost()).c_str());
+	LOG(LOG_INFO, "zkLogPath: %s", (Config::getInstance()->getZkLogPath()).c_str());
 	return 0;
 }
 
@@ -92,12 +92,4 @@ int Util::printServiceMap() {
 	Config* conf = Config::getInstance();
 	conf->printMap();
     return 0;
-}
-
-string Util::chooseZkHostRandom() {
-	string zkHost = (Config::getInstance())->getZkHost();
-	vector<string> hosts = split(zkHost, ',');
-	srandom(time(0));
-	int i = random() % hosts.size();
-	return hosts[i];
 }

@@ -7,17 +7,18 @@
 #include <vector>
 #include <iostream>
 #include <unistd.h>
+#include <pthread.h>
 #include "Config.h"
 #include "Util.h"
 #include "Log.h"
-#include "x86_spinlocks.h"
 #include "ConstDef.h"
 using namespace std;
 
 Config* Config::_instance = NULL;
 
 Config::Config(){
-	serviceMapLock = SPINLOCK_INITIALIZER;
+	pthread_mutex_init(&serviceMapLock, NULL);
+	//serviceMapLock = SPINLOCK_INITIALIZER;
 	resetConfig();
 }
 
@@ -206,45 +207,44 @@ string Config::getMonitorList() {
 
 int Config::printMap() {
 	for (auto it = _serviceMap.begin(); it != _serviceMap.end(); ++it) {
-#ifdef DEBUGSSS
-		if ((it->second).getServiceFather() != "/qconf/demo/test/hosts") {
-			continue;
-		}
-#endif
-		LOG(LOG_INFO, "path:%s, host:%s, port:%d, serviceFather:%s, status:%d", (it->first).c_str(), \
-        (it->second).getHost().c_str(), (it->second).getPort(), (it->second).getServiceFather().c_str(), (it->second).getStatus());
+		LOG(LOG_INFO, "path: %s", (it->first).c_str());
+		LOG(LOG_INFO, "host: %s", (it->second).getHost().c_str());
+		LOG(LOG_INFO, "port: %d", (it->second).getPort());
+		LOG(LOG_INFO, "service father: %s", (it->second).getServiceFather().c_str());
+		LOG(LOG_INFO, "status: %d", (it->second).getStatus());
 	}
     return 0;
 }
 
 
 int Config::addService(string ipPath, ServiceItem serviceItem) {
-	spinlock_lock(&serviceMapLock);
+	pthread_mutex_lock(&serviceMapLock);
     _serviceMap[ipPath] = serviceItem;
-    spinlock_unlock(&serviceMapLock);
+    pthread_mutex_unlock(&serviceMapLock);
     return 0;
 }
 
 void Config::deleteService(const string& ipPath) {
-	spinlock_lock(&serviceMapLock);
+	pthread_mutex_lock(&serviceMapLock);
 	_serviceMap.erase(ipPath);
-	spinlock_unlock(&serviceMapLock);
+	pthread_mutex_unlock(&serviceMapLock);
 }
 
 map<string, ServiceItem> Config::getServiceMap() {
 	map<string, ServiceItem> ret;
-	spinlock_lock(&serviceMapLock);
+	pthread_mutex_lock(&serviceMapLock);
 	ret = _serviceMap;
-	spinlock_unlock(&serviceMapLock);
+	pthread_mutex_unlock(&serviceMapLock);
 	return ret;
 }
 
 int Config::setServiceMap(string node, int val) {
-	spinlock_lock(&serviceMapLock);
+	pthread_mutex_lock(&serviceMapLock);
 	_serviceMap[node].setStatus(val);
-	spinlock_unlock(&serviceMapLock);
+	pthread_mutex_unlock(&serviceMapLock);
 	return 0;
 }
+
 //no necessity to add lock
 void Config::clearServiceMap() {
 	_serviceMap.clear();
@@ -252,8 +252,8 @@ void Config::clearServiceMap() {
 
 ServiceItem Config::getServiceItem(const string& ipPath) {
 	ServiceItem ret;
-	spinlock_lock(&serviceMapLock);
+	pthread_mutex_lock(&serviceMapLock);
 	ret = _serviceMap[ipPath];
-	spinlock_unlock(&serviceMapLock);
+	pthread_mutex_unlock(&serviceMapLock);
     return ret;
 }

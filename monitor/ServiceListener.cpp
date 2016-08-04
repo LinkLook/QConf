@@ -13,7 +13,6 @@
 #include "Log.h"
 #include "ConstDef.h"
 #include "Util.h"
-#include "x86_spinlocks.h"
 using namespace std;
 
 ServiceListener* ServiceListener::slInstance = NULL;
@@ -48,9 +47,12 @@ int ServiceListener::initEnv() {
 }
 
 ServiceListener::ServiceListener() : zh(NULL) {
-	serviceFatherToIpLock = SPINLOCK_INITIALIZER;
-	serviceFatherStatusLock = SPINLOCK_INITIALIZER;
-    watchFlagLock = SPINLOCK_INITIALIZER;
+	//serviceFatherToIpLock = SPINLOCK_INITIALIZER;
+	pthread_mutex_init(&serviceFatherToIpLock, NULL);
+	//serviceFatherStatusLock = SPINLOCK_INITIALIZER;
+    pthread_mutex_init(&serviceFatherStatusLock, NULL);
+    //watchFlagLock = SPINLOCK_INITIALIZER;
+    pthread_mutex_init(&watchFlagLock, NULL);
 	conf = Config::getInstance();
 	lb = LoadBalance::getInstance();
 	//It makes sense. Make all locks occur in one function
@@ -65,9 +67,9 @@ ServiceListener::~ServiceListener() {
 //path is the path of ipPort
 void ServiceListener::modifyServiceFatherToIp(const string op, const string& path) {
 	if (op == CLEAR) {
-		spinlock_lock(&serviceFatherToIpLock);
+		pthread_mutex_lock(&serviceFatherToIpLock);
 		serviceFatherToIp.clear();
-		spinlock_unlock(&serviceFatherToIpLock);
+		pthread_mutex_unlock(&serviceFatherToIpLock);
 	}
 	size_t pos = path.rfind('/');
 	string serviceFather = path.substr(0, pos);
@@ -75,7 +77,6 @@ void ServiceListener::modifyServiceFatherToIp(const string op, const string& pat
 	size_t pos2 = ipPort.rfind(':');
 	string ip = ipPort.substr(0, pos2);
 	string port = ipPort.substr(pos2 + 1);
-
 	if (op == ADD) {
 		//If this ipPort has exist, no need to do anything
 		if (ipExist(serviceFather, ipPort)) {
@@ -108,7 +109,24 @@ void ServiceListener::modifyServiceFatherToIp(const string op, const string& pat
 
 		conf->deleteService(path);
 		conf->addService(path, item);
+		//actually serviceFather sure should exist. no need to discuss
+		/*
+		if (!serviceFatherExist(serviceFather)) {
+			spinlock_lock(&serviceFatherToIpLock);
+			serviceFatherToIp.insert(make_pair(serviceFather, unordered_set<string> ()));
+            serviceFatherToIp[serviceFather].insert(ipPort);
+            spinlock_unlock(&serviceFatherToIpLock);
 
+            modifyServiceFatherStatus(serviceFather, status, 1);
+		}
+		else {
+            auto it = serviceFatherToIp.find(serviceFather);
+            if ((it->second).find(ipPort) == (it->second).end()) {
+                serviceFatherToIp[serviceFather].insert(ipPort);
+                //modify the serviceFatherStatus.serviceFatherStatus changed too
+                modifyServiceFatherStatus(serviceFather, status, 1);
+            }
+		}*/
         addIpPort(serviceFather, ipPort);
         modifyServiceFatherStatus(serviceFather, status, 1);
 	}
@@ -128,40 +146,10 @@ void ServiceListener::modifyServiceFatherToIp(const string op, const string& pat
 		//uodate serviceMap
 		conf->deleteService(path);
 	}
-#ifdef DEBUGS
-	cout << op << 666666666 << path << endl;
-    for (auto it1 = serviceFatherToIp.begin(); it1 != serviceFatherToIp.end(); ++it1) {
-        if (it1->first != "/qconf/demo/test/hosts") {
-            continue;
-        }
-        cout << it1->first << endl;
-        for (auto it2 = (it1->second).begin(); it2 != (it1->second).end(); ++it2) {
-            cout << *it2 << " ";
-        }
-        cout << endl;
-    }
-#endif
-#ifdef DEBUGSS
-	cout << op << 77777777 << path << endl;
-	for (auto it = serviceFatherStatus.begin(); it != serviceFatherStatus.end(); ++it) {
-        if (it->first != "/qconf/demo/test/hosts") {
-            continue;
-        }
-		cout << it->first << endl;
-		for (auto it1 = (it->second).begin(); it1 != (it->second).end(); ++it1) {
-			cout << *it1 << " ";
-		}
-		cout << endl;
-	}
-#endif
-#ifdef DEBUGSSS
-	cout << op << 888888 << path << endl;
-	Util::printServiceMap();
-#endif
 }
 
 void ServiceListener::processDeleteEvent(zhandle_t* zhandle, const string& path) {
-	//It must be a service node. Because I do zoo_get() only in service node
+	//It must be a service node. Because I do zoo_get only in service node
 	//update serviceFatherToIp
 	ServiceListener* sl = ServiceListener::getInstance();
 	sl->modifyServiceFatherToIp(DELETE, path);
@@ -197,20 +185,13 @@ void ServiceListener::processChildEvent(zhandle_t* zhandle, const string& path) 
 }
 
 void ServiceListener::processChangedEvent(zhandle_t* zhandle, const string& path) {
+	//ServiceListener* sl = ServiceListener::getInstance();
 	Config* conf = Config::getInstance();
-#ifdef DEBUGM
-    time_t curTime;
-    time(&curTime);
-    struct tm* realTime = localtime(&curTime);
-    cout << "ccccc1: " << path << " " << realTime->tm_min << " " << realTime->tm_sec << endl;
-#endif
+	//int oldStatus = (conf->getServiceItem(path)).getStatus();
 	int newStatus = STATUS_UNKNOWN;
 	char data[16] = {0};
 	int dataLen = 16;
 	int ret = zoo_get(zhandle, path.c_str(), 1, data, &dataLen, NULL);
-#ifdef DEBUGM
-    cout << "ccccc2: " << path << " " << realTime->tm_min << " " << realTime->tm_sec << endl;
-#endif
     if (ret == ZOK) {
         LOG(LOG_INFO, "get node:%s success", __FUNCTION__, path.c_str());
     }
@@ -223,13 +204,19 @@ void ServiceListener::processChangedEvent(zhandle_t* zhandle, const string& path
         return;
     }
 	newStatus = atoi(data);
+	/*
+    size_t pos = path.rfind('/');
+    string serviceFather = path.substr(0, pos);
+    if (sl->getWatchFlag()) {
+        sl->clearWatchFlag();
+    }
+    else {
+	    sl->modifyServiceFatherStatus(serviceFather, oldStatus, -1);
+	    sl->modifyServiceFatherStatus(serviceFather, newStatus, 1);
+    }
+    */
 	//update serviceMap
     conf->setServiceMap(path, newStatus);
-#ifdef DEBUGM
-    cout << "ccccc3: " << path << " " << realTime->tm_min << " " << realTime->tm_sec << endl;
-    cout << "ccccc4: new status: " << newStatus << endl;
-    cout << "ccccc4: status: " << (conf->getServiceItem(path)).getStatus() << endl;
-#endif
 }
 
 void ServiceListener::watcher(zhandle_t* zhandle, int type, int state, const char* path, void* context) {
@@ -316,19 +303,6 @@ int ServiceListener::getAllIp() {
 		addChildren(*it, children);
 		deallocate_String_vector(&children);
 	}
-#ifdef DEBUGS
-    cout << 55555555555 << endl;
-    for (auto it1 = serviceFatherToIp.begin(); it1 != serviceFatherToIp.end(); ++it1) {
-        if (it1->first != "/qconf/demo/test/hosts") {
-            continue;
-        }
-        cout << it1->first << endl;
-        for (auto it2 = (it1->second).begin(); it2 != (it1->second).end(); ++it2) {
-            cout << *it2 << " ";
-        }
-        cout << endl;
-    }
-#endif
 	return 0;
 }
 
@@ -397,130 +371,116 @@ int ServiceListener::loadService(string path, string serviceFather, string ipPor
 
 int ServiceListener::loadAllService() {
 	//here we need locks. Maybe we can remove it
-	spinlock_lock(&serviceFatherToIpLock);
+	pthread_mutex_lock(&serviceFatherToIpLock);
 	for (auto it1 = serviceFatherToIp.begin(); it1 != serviceFatherToIp.end(); ++it1) {
 		string serviceFather = it1->first;
 		unordered_set<string> ips = it1->second;
-		spinlock_unlock(&serviceFatherToIpLock);
+		pthread_mutex_unlock(&serviceFatherToIpLock);
 		vector<int> status(4, 0);
 		for (auto it2 = ips.begin(); it2 != ips.end(); ++it2) {
 			string path = serviceFather + "/" + (*it2);
 			loadService(path, serviceFather, *it2, status);
 		}
 		modifyServiceFatherStatus(serviceFather, status);
-		spinlock_lock(&serviceFatherToIpLock);
+		pthread_mutex_lock(&serviceFatherToIpLock);
 	}
-	spinlock_unlock(&serviceFatherToIpLock);
-#ifdef DEBUGSS
-	cout << 444444444 << endl;
-	for (auto it = serviceFatherStatus.begin(); it != serviceFatherStatus.end(); ++it) {
-        if (it->first != "/qconf/demo/test/hosts") {
-            continue;
-        }
-		cout << it->first << endl;
-		for (auto it1 = (it->second).begin(); it1 != (it->second).end(); ++it1) {
-			cout << *it1 << " ";
-		}
-		cout << endl;
-	}
-#endif
-#ifdef DEBUGSSS
-	cout << 3333333333 << endl;
-	Util::printServiceMap();
-#endif
+	pthread_mutex_unlock(&serviceFatherToIpLock);
     return 0;
 }
 
 //pay attention to locks
 int ServiceListener::modifyServiceFatherStatus(const string& serviceFather, int status, int op) {
-	spinlock_lock(&serviceFatherStatusLock);
+	pthread_mutex_lock(&serviceFatherStatusLock);
 	serviceFatherStatus[serviceFather][status + 1] += op;
-	spinlock_unlock(&serviceFatherStatusLock);
+	pthread_mutex_unlock(&serviceFatherStatusLock);
 	return 0;
 }
 
 int ServiceListener::getServiceFatherStatus(const string& serviceFather, int status) {
 	int ret;
-	spinlock_lock(&serviceFatherStatusLock);
+	pthread_mutex_lock(&serviceFatherStatusLock);
 	ret = serviceFatherStatus[serviceFather][status + 1];
-	spinlock_unlock(&serviceFatherStatusLock);
+	pthread_mutex_unlock(&serviceFatherStatusLock);
 	return ret;
 }
 
 int ServiceListener::modifyServiceFatherStatus(const string& serviceFather, vector<int>& statusv) {
-	spinlock_lock(&serviceFatherStatusLock);
+	pthread_mutex_lock(&serviceFatherStatusLock);
 	serviceFatherStatus[serviceFather] = statusv;
-	spinlock_unlock(&serviceFatherStatusLock);
+	pthread_mutex_unlock(&serviceFatherStatusLock);
 	return 0;
 }
 
 unordered_map<string, unordered_set<string>> ServiceListener::getServiceFatherToIp() {
 	unordered_map<string, unordered_set<string>> ret;
-	spinlock_lock(&serviceFatherToIpLock);
+	pthread_mutex_lock(&serviceFatherToIpLock);
 	ret = serviceFatherToIp;
-	spinlock_unlock(&serviceFatherToIpLock);
+	pthread_mutex_unlock(&serviceFatherToIpLock);
 	return ret;
 }
 
 size_t ServiceListener::getIpNum(const string& serviceFather) {
 	size_t ret = 0;
-	spinlock_lock(&serviceFatherToIpLock);
+	pthread_mutex_lock(&serviceFatherToIpLock);
 	if (serviceFatherToIp.find(serviceFather) != serviceFatherToIp.end()) {
         ret = serviceFatherToIp[serviceFather].size();
     }
-	spinlock_unlock(&serviceFatherToIpLock);
+	pthread_mutex_unlock(&serviceFatherToIpLock);
 	return ret;
 }
 
 bool ServiceListener::ipExist(const string& serviceFather, const string& ipPort) {
 	bool ret = true;
-	spinlock_lock(&serviceFatherToIpLock);
+	pthread_mutex_lock(&serviceFatherToIpLock);
 	if (serviceFatherToIp[serviceFather].find(ipPort) == serviceFatherToIp[serviceFather].end()) {
 		ret = false;
 	}
-	spinlock_unlock(&serviceFatherToIpLock);
+	pthread_mutex_unlock(&serviceFatherToIpLock);
 	return ret;
 }
 
 bool ServiceListener::serviceFatherExist(const string& serviceFather) {
 	bool ret = true;
-	spinlock_lock(&serviceFatherToIpLock);
+	pthread_mutex_lock(&serviceFatherToIpLock);
 	if (serviceFatherToIp.find(serviceFather) == serviceFatherToIp.end()) {
 		ret = false;
 	}
-	spinlock_unlock(&serviceFatherToIpLock);
+	pthread_mutex_unlock(&serviceFatherToIpLock);
 	return ret;
 }
 
 void ServiceListener::addIpPort(const string& serviceFather, const string& ipPort) {
-	spinlock_lock(&serviceFatherToIpLock);
+	pthread_mutex_lock(&serviceFatherToIpLock);
 	serviceFatherToIp[serviceFather].insert(ipPort);
-	spinlock_unlock(&serviceFatherToIpLock);
+	pthread_mutex_unlock(&serviceFatherToIpLock);
 }
 
 void ServiceListener::deleteIpPort(const string& serviceFather, const string& ipPort) {
-	spinlock_lock(&serviceFatherToIpLock);
+	pthread_mutex_lock(&serviceFatherToIpLock);
 	serviceFatherToIp[serviceFather].erase(ipPort);
-	spinlock_unlock(&serviceFatherToIpLock);
+	pthread_mutex_unlock(&serviceFatherToIpLock);
 }
 
 
+//这个标记一开始是用来区分zk节点的值是由monitor去改变的还是zk自己改变的
+//是为了使用serviceFatherStatus来判断是否仅剩一个up的服务节点的
+//最后发现这样还是不可行，因为网络的原因等，还是无法确认每次设置了标记位之后就清除，再设置，暂时无用
 void ServiceListener::setWatchFlag() {
-    spinlock_lock(&watchFlagLock);
+    pthread_mutex_lock(&watchFlagLock);
     watchFlag = true;
-    spinlock_unlock(&watchFlagLock);
+    pthread_mutex_unlock(&watchFlagLock);
 }
 
 void ServiceListener::clearWatchFlag() {
-    spinlock_lock(&watchFlagLock);
+    pthread_mutex_lock(&watchFlagLock);
     watchFlag = true;
-    spinlock_unlock(&watchFlagLock);
+    pthread_mutex_unlock(&watchFlagLock);
 }
 
 bool ServiceListener::getWatchFlag(){
     bool ret;
-    spinlock_lock(&watchFlagLock);
+    pthread_mutex_lock(&watchFlagLock);
     ret = watchFlag;
-    spinlock_unlock(&watchFlagLock);
+    pthread_mutex_unlock(&watchFlagLock);
     return ret;
 }

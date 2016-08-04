@@ -64,9 +64,7 @@ int Process::daemonize() {
     signal(SIGTSTP, SIG_IGN);
     signal(SIGHUP, SIG_IGN);
 
-#ifdef CLOSEFD
-    int fd;
-#endif
+    //int fd;
     pid_t pid;
     //already a daemon
     if (getppid() == 1) {
@@ -92,13 +90,13 @@ int Process::daemonize() {
     else if (pid > 0) {
     	exit(0);
     }
-    //change directory, seems we don't need it
+    //change directory
     /*
     if (chdir("/") < 0) {
     	exit(EXIT_FAILURE);
     }*/
     //here close all the file description and redirect stand IO
-#ifdef CLOSEFD
+    /*
     fd = open("/dev/null", O_RDWR, 0);
     dup2(fd, STDIN_FILENO);
     dup2(fd, STDOUT_FILENO);
@@ -109,7 +107,7 @@ int Process::daemonize() {
     for (fd = sysconf(_SC_OPEN_MAX); fd >= 3; --fd) {
         close(fd);
     }
-#endif
+    */
     umask(0);
     return 0;
 }
@@ -402,12 +400,14 @@ int Process::processKeepalive(int& childExitStatus, const string pidFile) {
                 unlink(pidFile.c_str());
             }
 
+            //exit noemally
             if (WIFEXITED(exitStatus)) {
                 LOG(LOG_INFO, "worker process PID = %d exited normally with exit-code = %d (it used %ld kBytes max",
                     childPid, WEXITSTATUS(exitStatus), resourceUsage.ru_maxrss / 1024);
                 childExitStatus = WEXITSTATUS(exitStatus);
                 return 1;
             }
+            //exit because of signal. parent process will fork child process again
             else if (WIFSIGNALED(exitStatus)) {
                 LOG(LOG_INFO, "worker process PID = %d died on signal = %d (it used %ld kBytes max) ",
                     childPid, WTERMSIG(exitStatus), resourceUsage.ru_maxrss / 1024);

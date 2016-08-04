@@ -13,10 +13,8 @@
 #include "Zk.h"
 #include "LoadBalance.h"
 #include "ServiceListener.h"
-#include "x86_spinlocks.h"
 #include "MultiThread.h"
 using namespace std;
-static Zk* _zk = NULL;
 
 int main(int argc, char** argv){
 	Config* conf = Config::getInstance();
@@ -47,19 +45,14 @@ int main(int argc, char** argv){
 			}
 		}
 	}
-    //maybe we need it to make the child process wait a while
-    //sleep(2);
+
 	while (1) {
 		LOG(LOG_INFO, " main loop start -> !!!!!!");
         Process::clearStop();
+		MultiThread::clearThreadError();
 		conf->clearServiceMap();
-        if (!_zk) {
-            dp();
-            delete _zk;
-        }
-		_zk = Zk::getInstance();
-		//choose a zk machine random
-		string zkHost = Util::chooseZkHostRandom();
+		Zk* _zk = Zk::getInstance();
+		string zkHost = conf->getZkHost();
 		string zkLogPath = conf->getZkLogPath();
 		int recvTimeout = conf->getZkRecvTimeout();
 
@@ -73,11 +66,12 @@ int main(int argc, char** argv){
 				delete _zk;
 			}
 			sleep(2);
-			continue;
+			return 0;
 		}
 
 		//check qconf_monitor_lock_node/default_instance/md5_list
-		if(_zk->checkAndCreateZnode(conf->getNodeList()) == M_OK) {
+		//if(_zk->checkAndCreateZnode(conf->getNodeList()) == M_OK) {
+		if (_zk->createZnode2(conf->getNodeList()) == M_OK) {
 			LOG(LOG_INFO, "check znode %s done. node exist", (conf->getNodeList()).c_str());
 		}
 		else {
@@ -86,11 +80,12 @@ int main(int argc, char** argv){
 				delete _zk;
 			}
 			sleep(2);
-			continue;
+			return 0;
 		}
 
 		//check qconf_monitor_lock_node/default_instance/monitor_list
-		if(_zk->checkAndCreateZnode(conf->getMonitorList()) == M_OK) {
+		//if(_zk->checkAndCreateZnode(conf->getMonitorList()) == M_OK) {
+		if (_zk->createZnode2(conf->getMonitorList()) == M_OK) {
 			LOG(LOG_INFO, "check znode %s done. node exist", (conf->getMonitorList()).c_str());
 		}
 		else {
@@ -99,7 +94,7 @@ int main(int argc, char** argv){
 				delete _zk;
 			}
 			sleep(2);
-			continue;
+			return 0;
 		}
 
 		// monitor register, this function should in LoadBalance
@@ -141,6 +136,10 @@ int main(int argc, char** argv){
 			}
 			else {
 				LOG(LOG_ERROR, "get md5 to service father failed");
+				/*
+				how to deal with this in a better way?
+				if the reason of failure is node not exist, we should restart main loop
+				*/
 				delete lb;
 				sleep(2);
 				continue;
@@ -194,6 +193,7 @@ int main(int argc, char** argv){
             }
 		}
 		delete _zk;
+		sleep(2);
 	}
 	LOG(LOG_ERROR, "EXIT main loop!!!");
 	return 0;

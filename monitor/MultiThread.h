@@ -9,6 +9,7 @@
 #include <string>
 #include <fstream>
 #include <list>
+#include <pthread.h>
 #include "Util.h"
 #include "Config.h"
 #include "ConstDef.h"
@@ -17,7 +18,6 @@
 #include "Zk.h"
 #include "LoadBalance.h"
 #include "ServiceListener.h"
-#include "x86_spinlocks.h"
 using namespace std;
 class MultiThread {
 private:
@@ -29,17 +29,24 @@ private:
     LoadBalance* lb;
 	unordered_map<string, int> updateServiceInfo;
 	list<string> priority;
+	//key is the thread id of check thread. value is the index this thread in thread pool
 	map<pthread_t, size_t> threadPos;
-    spinlock_t threadPosLock;
+    //spinlock_t threadPosLock;
+	pthread_mutex_t threadPosLock;
 	Zk* zk;
 	int serviceFatherNum;
 	//copy of myServiceFather in loadBalance
 	vector<string> serviceFathers;
-    spinlock_t serviceFathersLock;
+    //spinlock_t serviceFathersLock;
+	pthread_mutex_t serviceFathersLock;
+	//marked weather there is a thread checking this service father
 	vector<bool> hasThread;
-	spinlock_t hasThreadLock;
+	//spinlock_t hasThreadLock;
+	pthread_mutex_t hasThreadLock;
+	//the next service father waiting for check
 	int waitingIndex;
-	spinlock_t waitingIndexLock;
+	//spinlock_t waitingIndexLock;
+	pthread_mutex_t waitingIndexLock;
 
 public:
 	~MultiThread();

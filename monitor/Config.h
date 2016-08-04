@@ -5,15 +5,16 @@
 #include <map>
 #include <vector>
 #include <unordered_map>
+#include <pthread.h>
 #include "ServiceItem.h"
-#include "x86_spinlocks.h"
 using namespace std;
 
 class Config {
 private:
 	static Config* _instance;
 
-	spinlock_t serviceMapLock;
+	//spinlock_t serviceMapLock;
+	pthread_mutex_t serviceMapLock;
 
 	int _daemonMode;
 	string _monitorHostname;
@@ -49,7 +50,6 @@ public:
 	string getZkHost();
 	string getZkLogPath();
 	int getZkRecvTimeout();
-
 	string getNodeList();
 	string getMonitorList();
 
@@ -61,7 +61,6 @@ public:
 	void deleteService(const string& ipPath);
 
     ServiceItem getServiceItem(const string& ipPath);
-
 	int printMap();
 };
 #endif

@@ -7,13 +7,13 @@
 #include <sys/types.h>
 #include <iostream>
 #include <errno.h>
+#include <pthread.h>
 #include "ConstDef.h"
 #include "Util.h"
 #include "Log.h"
 #include "Process.h"
 #include "LoadBalance.h"
 #include "Config.h"
-#include "x86_spinlocks.h"
 #include "Zk.h"
 
 using namespace std;
@@ -45,7 +45,8 @@ int LoadBalance::destroyEnv() {
 }
 
 LoadBalance::LoadBalance() : zh(NULL) {
-	md5ToServiceFatherLock = SPINLOCK_INITIALIZER;
+	//md5ToServiceFatherLock = SPINLOCK_INITIALIZER;
+	pthread_mutex_init(&md5ToServiceFatherLock, NULL);
 	conf = Config::getInstance();
 	md5ToServiceFather.clear();
 	monitors.clear();
@@ -96,11 +97,6 @@ void LoadBalance::processChangedEvent(zhandle_t* zhandle, const string path) {
 	else {
 		LOG(LOG_ERROR, "parameter error. zhandle is NULL");
 	}
-#ifdef DEBUGL
-    for (auto it = (lb->md5ToServiceFather).begin(); it != (lb->md5ToServiceFather).end(); ++it) {
-        cout << it->first << " " << it->second << endl;
-    }
-#endif
 	return;
 }
 
@@ -113,7 +109,6 @@ void LoadBalance::watcher(zhandle_t* zhandle, int type, int state, const char* p
 				kill(getpid(), SIGUSR2);
 			}
 			else {
-				//todo
 				LOG(LOG_INFO, "[session event] state: %d", state);
 			}
 			break;
@@ -201,11 +196,6 @@ int LoadBalance::getMd5ToServiceFather() {
 		LOG(LOG_INFO, "md5: %s, serviceFather: %s", md5Path.c_str(), serviceFather);
 	}
 	deallocate_String_vector(&md5Node);
-#ifdef DEBUGL
-    for (auto it = md5ToServiceFather.begin(); it != md5ToServiceFather.end(); ++it) {
-        cout << it->first << " " << it->second << endl;
-    }
-#endif
 	return M_OK;
 }
 
@@ -228,38 +218,17 @@ int LoadBalance::getMonitors(bool flag /*=false*/) {
 
 int LoadBalance::balance(bool flag /*=false*/) {
 	vector<string> md5Node;
-	spinlock_lock(&md5ToServiceFatherLock);
+	pthread_mutex_lock(&md5ToServiceFatherLock);
 	for (auto it = md5ToServiceFather.begin(); it != md5ToServiceFather.end(); ++it) {
 		md5Node.push_back(it->first);
 	}
-	spinlock_unlock(&md5ToServiceFatherLock);
-#ifdef DEBUG
-	cout << "LLL11111111111" << endl;
-    cout << "md5 node value:" << endl;
-	for (auto it = md5Node.begin(); it != md5Node.end(); ++it) {
-		cout << (*it) << endl;
-	}
-#endif
+	pthread_mutex_unlock(&md5ToServiceFatherLock);
 	vector<unsigned int> sequence;
 	for (auto it = monitors.begin(); it != monitors.end(); ++it) {
 		unsigned int tmp = stoi((*it).substr((*it).size() - 10));
 		sequence.push_back(tmp);
 	}
-#ifdef DEBUG
-	cout << "LLL222222222222" << endl;
-    cout << "sequence number of monitors registed:" << endl;
-	for (auto it = sequence.begin(); it != sequence.end(); ++it) {
-		cout << (*it) << endl;
-	}
-#endif
 	sort(sequence.begin(), sequence.end());
-#ifdef DEBUG
-	cout << "LLL33333333333" << endl;
-    cout << "sorted sequence number of monitors registed:" << endl;
-	for (auto it = sequence.begin(); it != sequence.end(); ++it) {
-		cout << (*it) << endl;
-	}
-#endif
 	string monitor = string(_zkLockBuf);
 	unsigned int mySeq = stoi(monitor.substr(monitor.size() - 10));
     size_t rank = 0;
@@ -274,19 +243,11 @@ int LoadBalance::balance(bool flag /*=false*/) {
         return M_ERR;
     }
 	for (size_t i = rank; i < md5Node.size(); i += monitors.size()) {
-		//maybe this lock is useless
-		spinlock_lock(&md5ToServiceFatherLock);
+		pthread_mutex_lock(&md5ToServiceFatherLock);
 		myServiceFather.push_back(md5ToServiceFather[md5Node[i]]);
-		spinlock_unlock(&md5ToServiceFatherLock);
+		pthread_mutex_unlock(&md5ToServiceFatherLock);
 		LOG(LOG_INFO, "my service father:%s", myServiceFather.back().c_str());
 	}
-#ifdef DEBUG
-	cout << "LLL44444444444" << endl;
-    cout << "my service father:" << endl;
-	for (auto it = myServiceFather.begin(); it != myServiceFather.end(); ++it) {
-		cout << (*it) << endl;
-	}
-#endif
 	return M_OK;
 }
 
@@ -310,7 +271,7 @@ void LoadBalance::updateMd5ToServiceFather(const string& md5Path, const string& 
     if (serviceFather.size() <= 0) {
         return;
     }
-	spinlock_lock(&md5ToServiceFatherLock);
+	pthread_mutex_lock(&md5ToServiceFatherLock);
 	md5ToServiceFather[md5Path] = serviceFather;
-	spinlock_unlock(&md5ToServiceFatherLock);
+	pthread_mutex_unlock(&md5ToServiceFatherLock);
 }
