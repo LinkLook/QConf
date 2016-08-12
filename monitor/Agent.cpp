@@ -19,12 +19,10 @@ using namespace std;
 int main(int argc, char** argv){
 	Config* conf = Config::getInstance();
 	Util::printConfig();
-#ifdef RELEASE
 	if (Process::isProcessRunning(MONITOR_PROCESS_NAME)) {
 		LOG(LOG_ERROR, "Monitor is already running.");
 		return -1;
 	}
-#endif
 	if (conf->isDaemonMode()) {
 		Process::daemonize();
 	}
@@ -49,7 +47,6 @@ int main(int argc, char** argv){
 	while (1) {
 		LOG(LOG_INFO, " main loop start -> !!!!!!");
         Process::clearStop();
-		MultiThread::clearThreadError();
 		conf->clearServiceMap();
 		Zk* _zk = Zk::getInstance();
 		string zkHost = conf->getZkHost();

@@ -146,6 +146,36 @@ void ServiceListener::modifyServiceFatherToIp(const string op, const string& pat
 		//uodate serviceMap
 		conf->deleteService(path);
 	}
+#ifdef DEBUGS
+    LOG(LOG_DEBUG, "op:%s, path:%s", op.c_str(), path.c_str());
+    for (auto it1 = serviceFatherToIp.begin(); it1 != serviceFatherToIp.end(); ++it1) {
+        if (it1->first != "/qconf/demo/test/hosts") {
+            continue;
+        }
+        cout << it1->first << endl;
+        for (auto it2 = (it1->second).begin(); it2 != (it1->second).end(); ++it2) {
+            cout << *it2 << " ";
+        }
+        cout << endl;
+    }
+#endif
+#ifdef DEBUGSS
+    LOG(LOG_DEBUG, "op:%s, path:%s", op.c_str(), path.c_str());
+	for (auto it = serviceFatherStatus.begin(); it != serviceFatherStatus.end(); ++it) {
+        if (it->first != "/qconf/demo/test/hosts") {
+            continue;
+        }
+		cout << it->first << endl;
+		for (auto it1 = (it->second).begin(); it1 != (it->second).end(); ++it1) {
+			cout << *it1 << " ";
+		}
+		cout << endl;
+	}
+#endif
+#ifdef DEBUGSSS
+    LOG(LOG_DEBUG, "op:%s, path:%s", op.c_str(), path.c_str());
+	Util::printServiceMap();
+#endif
 }
 
 void ServiceListener::processDeleteEvent(zhandle_t* zhandle, const string& path) {
@@ -188,10 +218,15 @@ void ServiceListener::processChangedEvent(zhandle_t* zhandle, const string& path
 	//ServiceListener* sl = ServiceListener::getInstance();
 	Config* conf = Config::getInstance();
 	//int oldStatus = (conf->getServiceItem(path)).getStatus();
+    time_t curTime;
+    time(&curTime);
+    struct tm* realTime = localtime(&curTime);
+    cout << "ccccc1: " << path << " " << realTime->tm_min << " " << realTime->tm_sec << endl;
 	int newStatus = STATUS_UNKNOWN;
 	char data[16] = {0};
 	int dataLen = 16;
 	int ret = zoo_get(zhandle, path.c_str(), 1, data, &dataLen, NULL);
+    cout << "ccccc2: " << path << " " << realTime->tm_min << " " << realTime->tm_sec << endl;
     if (ret == ZOK) {
         LOG(LOG_INFO, "get node:%s success", __FUNCTION__, path.c_str());
     }
@@ -217,6 +252,9 @@ void ServiceListener::processChangedEvent(zhandle_t* zhandle, const string& path
     */
 	//update serviceMap
     conf->setServiceMap(path, newStatus);
+    cout << "ccccc3: " << path << " " << realTime->tm_min << " " << realTime->tm_sec << endl;
+    cout << "ccccc4: new status: " << newStatus << endl;
+    cout << "ccccc4: status: " << (conf->getServiceItem(path)).getStatus() << endl;
 }
 
 void ServiceListener::watcher(zhandle_t* zhandle, int type, int state, const char* path, void* context) {
@@ -246,6 +284,7 @@ void ServiceListener::watcher(zhandle_t* zhandle, int type, int state, const cha
             processChildEvent(zhandle, string(path));
             break;
         case CHANGED_EVENT_DEF:
+            cout << "change event" << endl;
             LOG(LOG_INFO, "zookeeper watcher [ change event ] path:%s", path);
             processChangedEvent(zhandle, string(path));
             break;
@@ -303,6 +342,15 @@ int ServiceListener::getAllIp() {
 		addChildren(*it, children);
 		deallocate_String_vector(&children);
 	}
+#ifdef DEBUGS
+    for (auto it1 = serviceFatherToIp.begin(); it1 != serviceFatherToIp.end(); ++it1) {
+        LOG(LOG_DEBUG, "service father: %s", (it1->first).c_str());
+        LOG(LOG_DEBUG, "IP:");
+        for (auto it2 = (it1->second).begin(); it2 != (it1->second).end(); ++it2) {
+            LOG(LOG_DEBUG, "%s", (*it2).c_str());
+        }
+    }
+#endif
 	return 0;
 }
 
@@ -385,6 +433,21 @@ int ServiceListener::loadAllService() {
 		pthread_mutex_lock(&serviceFatherToIpLock);
 	}
 	pthread_mutex_unlock(&serviceFatherToIpLock);
+/*
+serviceFatherStatus is not used for now
+#ifdef DEBUGSS
+	for (auto it = serviceFatherStatus.begin(); it != serviceFatherStatus.end(); ++it) {
+		cout << it->first << endl;
+		for (auto it1 = (it->second).begin(); it1 != (it->second).end(); ++it1) {
+			cout << *it1 << " ";
+		}
+		cout << endl;
+	}
+#endif
+*/
+#ifdef DEBUGSSS
+	Util::printServiceMap();
+#endif
     return 0;
 }
 
