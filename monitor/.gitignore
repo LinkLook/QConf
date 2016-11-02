@@ -1,12 +1,11 @@
 tags
 *.out
 *.swp
-log/*
+logs/*
 zk_adaptor.h
 zookeeper.h
 *.a
 conf/*
-qconf-monitor
-pid
+monitor_pid
 tmp/*
 variables-and-locks.txt
