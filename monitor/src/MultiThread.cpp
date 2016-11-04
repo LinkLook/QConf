@@ -35,7 +35,6 @@ using namespace std;
 
 static pthread_t updateServiceThread;
 static pthread_t checkServiceThread[MAX_THREAD_NUM];
-//static spinlock_t updateServiceLock;
 static pthread_mutex_t updateServiceLock;
 
 MultiThread* MultiThread::mlInstance = NULL;
@@ -50,15 +49,10 @@ MultiThread* MultiThread::getInstance() {
 }
 
 MultiThread::MultiThread() {
-	//updateServiceLock = SPINLOCK_INITIALIZER;
 	pthread_mutex_init(&updateServiceLock, NULL);
-	//waitingIndexLock = SPINLOCK_INITIALIZER;
 	pthread_mutex_init(&waitingIndexLock, NULL);
-	//hasThreadLock = SPINLOCK_INITIALIZER;
     pthread_mutex_init(&hasThreadLock, NULL);
-    //threadPosLock = SPINLOCK_INITIALIZER;
     pthread_mutex_init(&threadPosLock, NULL);
-    //serviceFathersLock = SPINLOCK_INITIALIZER;
 	pthread_mutex_init(&serviceFathersLock, NULL);
 	conf = Config::getInstance();
 	zk = Zk::getInstance();
@@ -86,7 +80,8 @@ void MultiThread::setThreadError() {
 void MultiThread::clearThreadError() {
 	threadError = false;
 }
-//travelsal all the service under the service father to judge weather it's only one service up
+
+//traversal all the service under the service father to judge weather it's only one service up
 bool MultiThread::isOnlyOneUp(string node) {
 	ServiceListener* sl = ServiceListener::getInstance();
 	bool ret = true;
@@ -140,7 +135,6 @@ int MultiThread::updateConf(string node, int val) {
 	conf->setServiceMap(node, val);
 	return 0;
 }
-
 
 //update service thread. comes first update first
 void MultiThread::updateService() {
@@ -232,7 +226,6 @@ void MultiThread::updateService() {
 int MultiThread::isServiceExist(struct in_addr *addr, char* host, int port, int timeout, int curStatus) {
 	bool exist = true;  
     int sock = -1, val = 1, ret = 0;
-    //struct hostent *host;
     struct timeval conn_tv;
     struct timeval recv_tv;
     struct sockaddr_in serv_addr;
@@ -249,7 +242,6 @@ int MultiThread::isServiceExist(struct in_addr *addr, char* host, int port, int 
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
-    //serv_addr.sin_addr = *((struct in_addr *)host->h_addr);
     serv_addr.sin_addr = *addr;
 
     // set socket non-block
@@ -338,11 +330,6 @@ int MultiThread::tryConnect(string curServiceFather) {
         //It's important to get serviceMap in the loop to find zk's change in real time
         serviceMap = conf->getServiceMap();
 		string ipPort = curServiceFather + "/" + (*it);
-#ifdef DEBUG
-        if (curServiceFather == "/qconf/demo/test/hosts/host2") {
-            LOG(LOG_DEBUG, "ipPort:%s, time min:%d, time second: %d", ipPort.c_str(), realTime->tm_min, realTime->tm_sec);
-        }
-#endif
         /*
         some service father don't have services and we add "" to serviceFatherToIp
         so we need to judge weather It's a legal ipPort
@@ -360,17 +347,9 @@ int MultiThread::tryConnect(string curServiceFather) {
         item.getAddr(&addr);
         int curTryTimes = (oldStatus == STATUS_UP) ? 1 : 3;
 		int timeout = item.getConnectTimeout() > 0 ? item.getConnectTimeout() : 3;
-#ifdef DEBUG
-        if (curServiceFather == "/qconf/demo/test/hosts/host2") {
-            LOG(LOG_DEBUG, "ipPort:%s, time min:%d, time second: %d", ipPort.c_str(), realTime->tm_min, realTime->tm_sec);
-        }
-#endif
+
 		int res = isServiceExist(&addr, (char*)item.getHost().c_str(), item.getPort(), timeout, item.getStatus());
-#ifdef DEBUG
-        if (curServiceFather == "/qconf/demo/test/hosts/host2") {
-            LOG(LOG_DEBUG, "ipPort:%s, time min:%d, time second: %d", ipPort.c_str(), realTime->tm_min, realTime->tm_sec);
-        }
-#endif
+
         int status = (res)? 0 : 2;
         //If status is down. I will retry.
         while (curTryTimes < retryCount && status == STATUS_DOWN) {
@@ -379,16 +358,7 @@ int MultiThread::tryConnect(string curServiceFather) {
             status = (res) ? 0 : 2;
             ++curTryTimes;
         }
-#ifdef DEBUG
-        if (curServiceFather == "/qconf/demo/test/hosts/host2") {
-            LOG(LOG_DEBUG, "ipPort:%s, time min:%d, time second: %d", ipPort.c_str(), realTime->tm_min, realTime->tm_sec);
-        }
-#endif
-#ifdef DEBUGM
-        if (curServiceFather == "/qconf/demo/test/hosts/host2") {
-        LOG(LOG_DEBUG, "ipPort:%s, status:%d, olsStatus:%d", ipPort.c_str(), status, oldStatus);
-        }
-#endif
+
         LOG(LOG_INFO, "|checkService| service:%s, old status:%d, new status:%d. Have tried times:%d, max try times:%d", ipPort.c_str(), oldStatus, status, curTryTimes, retryCount);
 		if (status != oldStatus) {
 			pthread_mutex_lock(&updateServiceLock);
@@ -396,17 +366,7 @@ int MultiThread::tryConnect(string curServiceFather) {
             updateServiceInfo[ipPort] = status;
             pthread_mutex_unlock(&updateServiceLock);
 		}
-#ifdef DEBUG
-        if (curServiceFather == "/qconf/demo/test/hosts/host2") {
-            LOG(LOG_DEBUG, "ipPort:%s, time min:%d, time second: %d", ipPort.c_str(), realTime->tm_min, realTime->tm_sec);
-        }
-#endif
 	}
-#ifdef DEBUG
-    if (curServiceFather == "/qconf/demo/test/hosts/host2") {
-        LOG(LOG_DEBUG, "current service father:%s, time min:%d, time second: %d", curServiceFather.c_str(), realTime->tm_min, realTime->tm_sec);
-    }
-#endif
     return 0;
 }
 
@@ -419,11 +379,6 @@ void MultiThread::checkService() {
     time(&curTime);
     struct tm* realTime = localtime(&curTime);
 	while (1) {
-#ifdef DEBUG
-        if (pos == 0) {
-            LOG(LOG_DEBUG, "pos: %d, time min: %d, time second: %d", pos, realTime->tm_min, realTime->tm_sec);
-        }
-#endif
         if (Process::isStop() || LoadBalance::getReBalance() || isThreadError()) {
             break;
         }
@@ -432,27 +387,14 @@ void MultiThread::checkService() {
         pthread_mutex_unlock(&serviceFathersLock);
 		LOG(LOG_INFO, "|checkService| pthread id %x, pthread pos %d, current service father %s", \
 			(unsigned int)pthreadId, (int)pos, curServiceFather.c_str());
-#ifdef DEBUG
-        if (pos == 0) {
-            LOG(LOG_DEBUG, "pos: %d, time min: %d, time second: %d", pos, realTime->tm_min, realTime->tm_sec);
-        }
-#endif
+
 		tryConnect(curServiceFather);
-#ifdef DEBUG
-        if (pos == 0) {
-            LOG(LOG_DEBUG, "pos: %d, time min: %d, time second: %d", pos, realTime->tm_min, realTime->tm_sec);
-        }
-#endif
+
         if (serviceFatherNum > MAX_THREAD_NUM) {
 		    setHasThread(pos, false);
 		    pos = getAndAddWaitingIndex();
 		    setHasThread(pos, true);
         }
-#ifdef DEBUG
-        if (pos == 0) {
-            LOG(LOG_DEBUG, "pos: %d, time min: %d, time second: %d", pos, realTime->tm_min, realTime->tm_sec);
-        }
-#endif
         sleep(2);
 	}
     return;
@@ -514,9 +456,6 @@ int MultiThread::runMainThread() {
 					}
 					threadPos[checkServiceThread[oldThreadNum]] = oldThreadNum;
                     pthread_mutex_unlock(&threadPosLock);
-#ifdef DEBUGM
-                    LOG(LOG_DEBUG, "checkServiceThread[%d], threadId: %d", oldThreadNum, checkServiceThread[oldThreadNum]);
-#endif
 				}
 			}
 		}
@@ -540,7 +479,6 @@ int MultiThread::runMainThread() {
     	ret = -1;
     }
     cout << "exit update " << endl;
-    cout << "fffffffff" << endl;
     clearThreadError();
     return ret;
 }

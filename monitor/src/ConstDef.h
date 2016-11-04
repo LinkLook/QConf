@@ -7,7 +7,7 @@ const string confPath = "conf/monitor.conf";
 
 //config file keys
 const string daemonMode = "daemon_mode";
-const string autoStart = "auto_start";
+const string autoRestart = "auto_restart";
 const string logLevel = "log_level";
 const string connRetryCount = "connect_retry_count";
 const string scanInterval = "scan_interval";
@@ -19,14 +19,14 @@ constexpr int minLogLevel = 0;
 constexpr int maxLogLevel = 6;
 
 //log file
-const string logPath = "log/";
-const string logFileNamePrefix = "qconf-monitor.log";
+const string logPath = "logs/";
+const string logFileNamePrefix = "qconf_monitor.log";
 
 //process name
-const string MONITOR_PROCESS_NAME = "qconf-monitor";
+const string MONITOR_PROCESS_NAME = "qconf_monitor";
 
 //pid file
-const string PIDFILE = "pid";
+const string PIDFILE = "monitor_pid";
 
 //command file
 const string CMDFILE = "tmp/cmd";

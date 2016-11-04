@@ -78,7 +78,7 @@ int Util::writeToFile(const string content, const string fileName) {
 
 int Util::printConfig(){
 	LOG(LOG_INFO, "daemonMode: %d", Config::getInstance()->isDaemonMode());
-	LOG(LOG_INFO, "autoStart: %d", Config::getInstance()->isAutoStart());
+	LOG(LOG_INFO, "autoRestart: %d", Config::getInstance()->isAutoRestart());
 	LOG(LOG_INFO, "logLevel: %d", Config::getInstance()->getLogLevel());
 	LOG(LOG_INFO, "connRetryCount: %d", Config::getInstance()->getConnRetryCount());
 	LOG(LOG_INFO, "scanInterval: %d", Config::getInstance()->getScanInterval());

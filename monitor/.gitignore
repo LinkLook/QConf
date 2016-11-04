@@ -5,7 +5,6 @@ logs/*
 zk_adaptor.h
 zookeeper.h
 *.a
-conf/*
 monitor_pid
 tmp/*
 variables-and-locks.txt

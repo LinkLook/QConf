@@ -27,9 +27,7 @@ ServiceItem::ServiceItem(std::string host, struct in_addr *addr, int port, int c
 	_connRetry(connRetry),
 	_connTimeout(timeout),
 	_serviceFather(serviceFather),
-	_status(status){
-
-	}
+	_status(status) {}
 
 void ServiceItem::clear() {
 	memset(&_addr, 0, sizeof(struct in_addr));
@@ -41,8 +39,7 @@ void ServiceItem::clear() {
     _connTimeout = -1;
 }
 
-ServiceItem::~ServiceItem(){
-};
+ServiceItem::~ServiceItem() {}
 
 int ServiceItem::setStatus(int status) {
     _status = status;

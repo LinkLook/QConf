@@ -18,7 +18,6 @@ Config* Config::_instance = NULL;
 
 Config::Config(){
 	pthread_mutex_init(&serviceMapLock, NULL);
-	//serviceMapLock = SPINLOCK_INITIALIZER;
 	resetConfig();
 }
 
@@ -37,7 +36,7 @@ Config* Config::getInstance(){
 }
 
 int Config::resetConfig(){
-	_autoStart = 1;
+	_autoRestart = 1;
     _daemonMode = 0;
     _logLevel = 2;
     _zkHost = "127.0.0.1:2181";
@@ -57,9 +56,9 @@ int Config::setValueInt(const string& key, const string& value){
 			_daemonMode = 1;
 		}
 	}
-	else if (key == autoStart){
+	else if (key == autoRestart){
 		if (intValue == 0) {
-			_autoStart = 0;
+			_autoRestart = 0;
 		}
 	}
 	else if (key == logLevel){
@@ -161,8 +160,8 @@ string Config::getMonitorHostname(){
 	return _monitorHostname;
 }
 
-int Config::isAutoStart(){
-	return _autoStart;
+int Config::isAutoRestart(){
+	return _autoRestart;
 }
 
 int Config::getConnRetryCount(){

@@ -13,12 +13,11 @@ class Config {
 private:
 	static Config* _instance;
 
-	//spinlock_t serviceMapLock;
 	pthread_mutex_t serviceMapLock;
 
 	int _daemonMode;
 	string _monitorHostname;
-	int _autoStart;
+	int _autoRestart;
 	int _logLevel;
 	int _connRetryCount;
 	int _scanInterval;
@@ -40,7 +39,7 @@ public:
 	int load();
 	int resetConfig();
 	int isDaemonMode();
-	int isAutoStart();
+	int isAutoRestart();
 
 	string getMonitorHostname();
 	int getLogLevel();

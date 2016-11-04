@@ -47,11 +47,8 @@ int ServiceListener::initEnv() {
 }
 
 ServiceListener::ServiceListener() : zh(NULL) {
-	//serviceFatherToIpLock = SPINLOCK_INITIALIZER;
 	pthread_mutex_init(&serviceFatherToIpLock, NULL);
-	//serviceFatherStatusLock = SPINLOCK_INITIALIZER;
     pthread_mutex_init(&serviceFatherStatusLock, NULL);
-    //watchFlagLock = SPINLOCK_INITIALIZER;
     pthread_mutex_init(&watchFlagLock, NULL);
 	conf = Config::getInstance();
 	lb = LoadBalance::getInstance();
@@ -146,36 +143,6 @@ void ServiceListener::modifyServiceFatherToIp(const string op, const string& pat
 		//uodate serviceMap
 		conf->deleteService(path);
 	}
-#ifdef DEBUGS
-    LOG(LOG_DEBUG, "op:%s, path:%s", op.c_str(), path.c_str());
-    for (auto it1 = serviceFatherToIp.begin(); it1 != serviceFatherToIp.end(); ++it1) {
-        if (it1->first != "/qconf/demo/test/hosts") {
-            continue;
-        }
-        cout << it1->first << endl;
-        for (auto it2 = (it1->second).begin(); it2 != (it1->second).end(); ++it2) {
-            cout << *it2 << " ";
-        }
-        cout << endl;
-    }
-#endif
-#ifdef DEBUGSS
-    LOG(LOG_DEBUG, "op:%s, path:%s", op.c_str(), path.c_str());
-	for (auto it = serviceFatherStatus.begin(); it != serviceFatherStatus.end(); ++it) {
-        if (it->first != "/qconf/demo/test/hosts") {
-            continue;
-        }
-		cout << it->first << endl;
-		for (auto it1 = (it->second).begin(); it1 != (it->second).end(); ++it1) {
-			cout << *it1 << " ";
-		}
-		cout << endl;
-	}
-#endif
-#ifdef DEBUGSSS
-    LOG(LOG_DEBUG, "op:%s, path:%s", op.c_str(), path.c_str());
-	Util::printServiceMap();
-#endif
 }
 
 void ServiceListener::processDeleteEvent(zhandle_t* zhandle, const string& path) {
@@ -342,15 +309,6 @@ int ServiceListener::getAllIp() {
 		addChildren(*it, children);
 		deallocate_String_vector(&children);
 	}
-#ifdef DEBUGS
-    for (auto it1 = serviceFatherToIp.begin(); it1 != serviceFatherToIp.end(); ++it1) {
-        LOG(LOG_DEBUG, "service father: %s", (it1->first).c_str());
-        LOG(LOG_DEBUG, "IP:");
-        for (auto it2 = (it1->second).begin(); it2 != (it1->second).end(); ++it2) {
-            LOG(LOG_DEBUG, "%s", (*it2).c_str());
-        }
-    }
-#endif
 	return 0;
 }
 
@@ -433,21 +391,16 @@ int ServiceListener::loadAllService() {
 		pthread_mutex_lock(&serviceFatherToIpLock);
 	}
 	pthread_mutex_unlock(&serviceFatherToIpLock);
-/*
-serviceFatherStatus is not used for now
-#ifdef DEBUGSS
-	for (auto it = serviceFatherStatus.begin(); it != serviceFatherStatus.end(); ++it) {
-		cout << it->first << endl;
-		for (auto it1 = (it->second).begin(); it1 != (it->second).end(); ++it1) {
-			cout << *it1 << " ";
-		}
-		cout << endl;
-	}
-#endif
-*/
-#ifdef DEBUGSSS
-	Util::printServiceMap();
-#endif
+    /*
+    serviceFatherStatus is not used for now
+    for (auto it = serviceFatherStatus.begin(); it != serviceFatherStatus.end(); ++it) {
+        cout << it->first << endl;
+        for (auto it1 = (it->second).begin(); it1 != (it->second).end(); ++it1) {
+            cout << *it1 << " ";
+        }
+        cout << endl;
+    }
+    */
     return 0;
 }
 

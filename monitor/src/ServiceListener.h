@@ -41,7 +41,6 @@ public:
     int zkGetChildren(const string path, struct String_vector* children);
     size_t getIpNum(const string& serviceFather);
 
-    //spinlock_t serviceFatherToIpLock;
     pthread_mutex_t serviceFatherToIpLock;
     pthread_mutex_t serviceFatherStatusLock;
     pthread_mutex_t watchFlagLock;

@@ -20,7 +20,6 @@ public:
 	static LoadBalance* lbInstance;
 	Config* conf;
 
-	//spinlock_t md5ToServiceFatherLock;
 	pthread_mutex_t md5ToServiceFatherLock;
 
     //use map but not unordered_map so it can be sorted autonatically
@@ -42,8 +41,8 @@ public:
 	
 	int getMd5ToServiceFather();
 	void updateMd5ToServiceFather(const string& md5Path, const string& serviceFather);
-	int getMonitors(bool flag = false);
-	int balance(bool flag = false);
+	int getMonitors();
+	int balance();
 	const vector<string> getMyServiceFather();
 
 	static void watcher(zhandle_t* zhandle, int type, int state, const char* path, void* context);

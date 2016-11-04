@@ -45,7 +45,6 @@ int LoadBalance::destroyEnv() {
 }
 
 LoadBalance::LoadBalance() : zh(NULL) {
-	//md5ToServiceFatherLock = SPINLOCK_INITIALIZER;
 	pthread_mutex_init(&md5ToServiceFatherLock, NULL);
 	conf = Config::getInstance();
 	md5ToServiceFather.clear();
@@ -97,11 +96,6 @@ void LoadBalance::processChangedEvent(zhandle_t* zhandle, const string path) {
 	else {
 		LOG(LOG_ERROR, "parameter error. zhandle is NULL");
 	}
-#ifdef DEBUGL
-    for (auto it = (lb->md5ToServiceFather).begin(); it != (lb->md5ToServiceFather).end(); ++it) {
-        cout << it->first << " " << it->second << endl;
-    }
-#endif
 	return;
 }
 
@@ -201,15 +195,10 @@ int LoadBalance::getMd5ToServiceFather() {
 		LOG(LOG_INFO, "md5: %s, serviceFather: %s", md5Path.c_str(), serviceFather);
 	}
 	deallocate_String_vector(&md5Node);
-#ifdef DEBUGL
-    for (auto it = md5ToServiceFather.begin(); it != md5ToServiceFather.end(); ++it) {
-        LOG(LOG_DEBUG, "md5:%s, service father:%s", (it->first).c_str(), (it->second).c_str());
-    }
-#endif
 	return M_OK;
 }
 
-int LoadBalance::getMonitors(bool flag /*=false*/) {
+int LoadBalance::getMonitors() {
 	string path = conf->getMonitorList();
 	struct String_vector monitorNode = {0};
 	int ret = zkGetChildren(path, &monitorNode);
@@ -226,37 +215,22 @@ int LoadBalance::getMonitors(bool flag /*=false*/) {
     return M_OK;
 }
 
-int LoadBalance::balance(bool flag /*=false*/) {
+int LoadBalance::balance() {
 	vector<string> md5Node;
 	pthread_mutex_lock(&md5ToServiceFatherLock);
 	for (auto it = md5ToServiceFather.begin(); it != md5ToServiceFather.end(); ++it) {
 		md5Node.push_back(it->first);
 	}
 	pthread_mutex_unlock(&md5ToServiceFatherLock);
-#ifdef DEBUG
-    LOG(LOG_DEBUG, "md5 node value:");
-	for (auto it = md5Node.begin(); it != md5Node.end(); ++it) {
-        LOG(LOG_DEBUG, "%s", (*it).c_str());
-	}
-#endif
+
 	vector<unsigned int> sequence;
 	for (auto it = monitors.begin(); it != monitors.end(); ++it) {
 		unsigned int tmp = stoi((*it).substr((*it).size() - 10));
 		sequence.push_back(tmp);
 	}
-#ifdef DEBUG
-    LOG(LOG_DEBUG, "sequence number of monitors registed:");
-	for (auto it = sequence.begin(); it != sequence.end(); ++it) {
-		LOG(LOG_DEBUG, "%u", *it);
-	}
-#endif
+
 	sort(sequence.begin(), sequence.end());
-#ifdef DEBUG
-    LOG(LOG_DEBUG, "sorted sequence number of monitors registed:");
-	for (auto it = sequence.begin(); it != sequence.end(); ++it) {
-		LOG(LOG_DEBUG, "%d", *it);
-	}
-#endif
+
 	string monitor = string(_zkLockBuf);
 	unsigned int mySeq = stoi(monitor.substr(monitor.size() - 10));
     size_t rank = 0;
@@ -276,12 +250,7 @@ int LoadBalance::balance(bool flag /*=false*/) {
 		pthread_mutex_unlock(&md5ToServiceFatherLock);
 		LOG(LOG_INFO, "my service father:%s", myServiceFather.back().c_str());
 	}
-#ifdef DEBUG
-    LOG(LOG_DEBUG, "my service father:");
-	for (auto it = myServiceFather.begin(); it != myServiceFather.end(); ++it) {
-		LOG(LOG_DEBUG, "%s", (*it).c_str());
-	}
-#endif
+
 	return M_OK;
 }
 

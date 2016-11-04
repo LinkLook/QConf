@@ -31,21 +31,17 @@ private:
 	list<string> priority;
 	//key is the thread id of check thread. value is the index this thread in thread pool
 	map<pthread_t, size_t> threadPos;
-    //spinlock_t threadPosLock;
 	pthread_mutex_t threadPosLock;
 	Zk* zk;
 	int serviceFatherNum;
 	//copy of myServiceFather in loadBalance
 	vector<string> serviceFathers;
-    //spinlock_t serviceFathersLock;
 	pthread_mutex_t serviceFathersLock;
 	//marked weather there is a thread checking this service father
 	vector<bool> hasThread;
-	//spinlock_t hasThreadLock;
 	pthread_mutex_t hasThreadLock;
 	//the next service father waiting for check
 	int waitingIndex;
-	//spinlock_t waitingIndexLock;
 	pthread_mutex_t waitingIndexLock;
 
 public:

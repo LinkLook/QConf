@@ -26,7 +26,7 @@ int main(int argc, char** argv){
 	if (conf->isDaemonMode()) {
 		Process::daemonize();
 	}
-	if (conf->isAutoStart()) {
+	if (conf->isAutoRestart()) {
 		int childExitStatus = -1;
 		int ret = Process::processKeepalive(childExitStatus, PIDFILE);
 		//parent process

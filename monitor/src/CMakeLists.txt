@@ -27,7 +27,6 @@ file(GLOB ZK_OBJ_FILE
 message(${ZK_OBJ_FILE})
 
 add_definitions(${MANAGER_COMPILE_FLAGS})
-add_definitions(-D DEBUGSSS -D DEBUGSS -D DEBUGS -D DEBUG -D DEBUGL -D DEBUGM)
 add_executable(qconf_monitor ${DIR_SRCS})
 
 # link libpthread
