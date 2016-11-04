@@ -12,27 +12,27 @@ using namespace std;
 
 class Zk{
 private:
-	Config* conf;
-	static Zk* zk;
+    Config* conf;
+    static Zk* zk;
 
-	zhandle_t* _zh;
-	int _recvTimeout;
-	string _zkLogPath;
-	string _zkHost;
-	FILE* _zkLogFile;
-	Zk();
+    zhandle_t* _zh;
+    int _recvTimeout;
+    string _zkLogPath;
+    string _zkHost;
+    FILE* _zkLogFile;
+    Zk();
 public:
-	~Zk();
-	static Zk* getInstance();
-	int initEnv(const string zkHost, const string zkLogPath, const int recvTimeout);
-	void destroyEnv();
+    ~Zk();
+    static Zk* getInstance();
+    int initEnv(const string zkHost, const string zkLogPath, const int recvTimeout);
+    void destroyEnv();
 
-	int checkAndCreateZnode(string path);
-	int createZnode(string path);
-	int createZnode2(string path);
-	int setZnode(string node, string data);
-	int registerMonitor(string path);
-	bool znodeExist(const string& path);
+    int checkAndCreateZnode(string path);
+    int createZnode(string path);
+    int createZnode2(string path);
+    int setZnode(string node, string data);
+    int registerMonitor(string path);
+    bool znodeExist(const string& path);
     void zErrorHandler(const int& ret);
 
     static void watcher(zhandle_t* zhandle, int type, int state, const char* node, void* context);

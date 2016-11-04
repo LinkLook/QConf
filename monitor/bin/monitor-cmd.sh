@@ -33,8 +33,8 @@ list () {
         exit 1
     else
         echo "list:$1" > $cmdfile
-    	kill -USR1 $chdpid
-	    echo "Send list command to $monitor."
+        kill -USR1 $chdpid
+        echo "Send list command to $monitor."
         sleep 2s
         tail -1000 tmp/list
     fi
@@ -46,7 +46,7 @@ reload () {
         exit 1
     else
         echo "reload:" > $cmdfile
-    	kill -USR1 $chdpid
+        kill -USR1 $chdpid
         echo "Send reload command to $monitor."
     fi
 }
@@ -65,9 +65,9 @@ case "$1" in
     ;;
 
     version)
-        version 
+        version
     ;;
-    
+
     list)
         list $2
     ;;
@@ -90,4 +90,4 @@ case "$1" in
         exit 1
     ;;
 
-esac    
+esac

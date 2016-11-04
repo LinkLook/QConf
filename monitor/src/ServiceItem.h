@@ -20,9 +20,9 @@ private:
     //online or offline
     int _status;
 public:
-	ServiceItem(std::string host, struct in_addr *addr, int port, int connRetry, int timeout, std::string serviceFather, int status);
-	ServiceItem();
-	~ServiceItem();
+    ServiceItem(std::string host, struct in_addr *addr, int port, int connRetry, int timeout, std::string serviceFather, int status);
+    ServiceItem();
+    ~ServiceItem();
 
     int setStatus(int status);
     int getStatus();

@@ -3,7 +3,7 @@
 #include <string>
 using namespace std;
 //config file name
-const string confPath = "conf/monitor.conf"; 
+const string confPath = "conf/monitor.conf";
 
 //config file keys
 const string daemonMode = "daemon_mode";

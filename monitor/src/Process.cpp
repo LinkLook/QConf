@@ -37,25 +37,25 @@ void Process::clearStop() {
 }
 
 bool Process::isProcessRunning(const string& processName) {
-	FILE* ptr = NULL;
-	char ps[128] = {0};
-	char resBuf[128] = {0};
-	snprintf(ps, sizeof(ps), "ps -e | grep -c %s", processName.c_str());
-	strcpy(resBuf, "ABNORMAL");
-	if ((ptr = popen(ps, "r")) != NULL) {
-		while(fgets(resBuf, sizeof(resBuf), ptr)) {
-			if (atoi(resBuf) >= 2) {
-				pclose(ptr);
-				return true;
-			}
-		}
-	}
+    FILE* ptr = NULL;
+    char ps[128] = {0};
+    char resBuf[128] = {0};
+    snprintf(ps, sizeof(ps), "ps -e | grep -c %s", processName.c_str());
+    strcpy(resBuf, "ABNORMAL");
+    if ((ptr = popen(ps, "r")) != NULL) {
+        while(fgets(resBuf, sizeof(resBuf), ptr)) {
+            if (atoi(resBuf) >= 2) {
+                pclose(ptr);
+                return true;
+            }
+        }
+    }
     //excute ps failed or fgets() failed
     if (strcmp(resBuf, "ABNORMAL") == 0) {
         LOG(LOG_ERROR, "excute command failed");
         return true;
     }
-	pclose(ptr);
+    pclose(ptr);
     return false;
 }
 
@@ -69,32 +69,32 @@ int Process::daemonize() {
     pid_t pid;
     //already a daemon
     if (getppid() == 1) {
-    	return 1;
+        return 1;
     }
     //fork off the parent process
     pid = fork();
     if (pid < 0) {
-    	exit(1);
+        exit(1);
     }
     else if (pid > 0) {
-    	exit(0);
+        exit(0);
     }
     //create a new session ID
     if (setsid() < 0) {
-    	exit(1);
+        exit(1);
     }
 
     pid = fork();
     if (pid < 0) {
-    	exit(1);
+        exit(1);
     }
     else if (pid > 0) {
-    	exit(0);
+        exit(0);
     }
     //change directory
     /*
     if (chdir("/") < 0) {
-    	exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }*/
     // here close all the file description and redirect stand IO
     fd = open("/dev/null", O_RDWR, 0);
@@ -279,7 +279,7 @@ void Process::processParam(const string& op) {
         }
         fout << endl;
         fout <<"Up:" << upCount << "    Offline:" << offlineCount << "    Down:" \
-        << downCount << "    Unknown:" << unknownCount << "    Total:" << allCount << endl;       
+        << downCount << "    Unknown:" << unknownCount << "    Total:" << allCount << endl;
     }
     fout.close();
     return;
@@ -384,7 +384,7 @@ int Process::processKeepalive(int& childExitStatus, const string pidFile) {
                 signal(SIGUSR2, sigForward);
             }
         }
-        //parent process 
+        //parent process
         LOG(LOG_INFO, "waiting for PID = %d", childPid);
 
         struct rusage resourceUsage;
@@ -442,11 +442,11 @@ int Process::processKeepalive(int& childExitStatus, const string pidFile) {
             if (errno != EINTR) {
                 /* how can this happen ? */
                 LOG(LOG_INFO, "wait4(%d, ...) failed. errno: %d", childPid, errno);
-                return -1; 
+                return -1;
             }
         }
         else {
             LOG(LOG_ERROR, "Can't get here");
         }
-    } 
+    }
 }

@@ -15,22 +15,22 @@ ServiceItem::ServiceItem():
     // default 3 seconds
     _connTimeout(3),
     _serviceFather(""),
-    _status(STATUS_DOWN) 
-{   
+    _status(STATUS_DOWN)
+{
     memset(&_addr, 0, sizeof(struct in_addr));
 }
 
 ServiceItem::ServiceItem(std::string host, struct in_addr *addr, int port, int connRetry, int timeout, std::string serviceFather, int status):
-	_host(host),
-	_addr(*addr),
-	_port(port),
-	_connRetry(connRetry),
-	_connTimeout(timeout),
-	_serviceFather(serviceFather),
-	_status(status) {}
+    _host(host),
+    _addr(*addr),
+    _port(port),
+    _connRetry(connRetry),
+    _connTimeout(timeout),
+    _serviceFather(serviceFather),
+    _status(status) {}
 
 void ServiceItem::clear() {
-	memset(&_addr, 0, sizeof(struct in_addr));
+    memset(&_addr, 0, sizeof(struct in_addr));
     _host = "";
     _port = -1;
     _connRetry = 0;
